@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老大人血壓守護幫手 - 居家血壓記錄與醫師看診報表</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Noto Sans TC for high legibility -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0fdf4;
+            color: #1e293b;
+        }
+        /* Custom scrollbar for elderly touch friendly */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.02); }
+        }
+        .crisis-alert {
+            animation: pulse-fast 1s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- Header / Navbar -->
+    <header class="bg-emerald-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-emerald-700 p-2.5 rounded-2xl shadow-md text-2xl">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wide">血壓守護幫手</h1>
+                    <p class="text-xs text-emerald-100">長輩好操作 ‧ 子女隨時看 ‧ 醫師好幫手</p>
+                </div>
+            </div>
+            <div id="sync-status" class="bg-emerald-800 text-emerald-200 text-xs px-2.5 py-1.5 rounded-full font-medium flex items-center space-x-1">
+                <i class="fa-solid fa-cloud text-emerald-300"></i>
+                <span id="sync-text">雲端同步中</span>
+            </div>
+        </div>
+
+        <!-- User Profile Switcher Bar (New) -->
+        <div class="bg-emerald-800 border-t border-emerald-600 px-4 py-2">
+            <div class="max-w-md mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-user text-xl text-emerald-200"></i>
+                    <span class="text-xs text-emerald-200">當前紀錄長輩：</span>
+                    <select id="user-selector" onchange="switchUser(this.value)" class="bg-emerald-900 text-white font-bold text-base py-1 px-3 rounded-xl border border-emerald-500 focus:outline-none">
+                        <!-- Dynamic user options -->
+                    </select>
+                </div>
+                <button onclick="openUserManagementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1.5 px-3 rounded-xl flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>管理長輩</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto px-4 pt-4 pb-12">
+
+        <!-- Crisis Warning Banner (Dynamic) -->
+        <div id="crisis-banner" class="hidden mb-4 bg-red-600 text-white p-4 rounded-2xl shadow-xl crisis-alert border-4 border-yellow-300">
+            <div class="flex items-start space-x-3">
+                <div class="text-3xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <h3 class="text-xl font-black">【危急警示】血壓數值過高！</h3>
+                    <p class="text-base mt-1 text-red-100" id="crisis-msg">收縮壓超過180或舒張壓超過120，若伴隨頭暈、胸悶、劇烈頭痛請立即就醫！</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 1: 記錄血壓 (Add Record) -->
+        <section id="tab-record" class="space-y-4">
+            <div class="bg-white rounded-3xl shadow-lg p-5 border-2 border-emerald-100">
+                <h2 class="text-2xl font-bold text-emerald-900 mb-2 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-emerald-600 mr-2 text-xl"></i> 記錄今日血壓
+                </h2>
+                <!-- Active User Indicator -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-4 flex items-center justify-between">
+                    <span class="text-sm font-bold text-emerald-800">
+                        正在為 <span id="current-user-display-name" class="text-lg text-emerald-900 font-black underline">--</span> 記錄血壓
+                    </span>
+                    <button type="button" onclick="openUserManagementModal()" class="text-xs text-emerald-700 underline font-bold">切換長輩</button>
+                </div>
+
+                <form id="bp-form" onsubmit="handleFormSubmit(event)" class="space-y-5">
+                    <!-- Date Input -->
+                    <div>
+                        <label class="block text-lg font-bold text-slate-700 mb-2">1. 選擇測量日期</label>
+                        <input type="date" id="record-date" required
+                            class="w-full text-xl p-4 bg-slate-50 border-2 border-slate-300 rounded-2xl focus:border-emerald-600 focus:outline-none font-bold">
+                    </div>
+
+                    <!-- Time Slot Toggle -->
+                    <div>
+                        <label class="block text-lg font-bold text-slate-700 mb-2">2. 選擇測量時段</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" onclick="setTimeSlot('早晨 Morning')" id="btn-morning"
+                                class="py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-amber-500 text-white border-amber-600 shadow-md">
+                                <i class="fa-solid fa-sun text-2xl"></i>
+                                <span>早晨 (起床後)</span>
+                            </button>
+                            <button type="button" onclick="setTimeSlot('晚間 Evening')" id="btn-evening"
+                                class="py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-slate-100 text-slate-700 border-slate-300">
+                                <i class="fa-solid fa-moon text-2xl"></i>
+                                <span>晚間 (睡前)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SYS & DIA Inputs -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-red-50 p-4 rounded-2xl border-2 border-red-200">
+                            <label class="block text-base font-bold text-red-900 mb-1">收縮壓 SYS <span class="text-xs font-normal">(mmHg)</span></label>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="adjustValue('sys', -5)" class="w-12 h-12 bg-white text-red-700 rounded-xl font-black text-2xl shadow border border-red-300 flex items-center justify-center active:bg-red-100">-</button>
+                                <input type="number" id="sys-input" min="60" max="260" required placeholder="120"
+                                    class="w-full text-center text-3xl font-black p-2 bg-white border-2 border-red-300 rounded-xl focus:outline-none text-red-600">
+                                <button type="button" onclick="adjustValue('sys', 5)" class="w-12 h-12 bg-white text-red-700 rounded-xl font-black text-2xl shadow border border-red-300 flex items-center justify-center active:bg-red-100">+</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-2xl border-2 border-blue-200">
+                            <label class="block text-base font-bold text-blue-900 mb-1">舒張壓 DIA <span class="text-xs font-normal">(mmHg)</span></label>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="adjustValue('dia', -5)" class="w-12 h-12 bg-white text-blue-700 rounded-xl font-black text-2xl shadow border border-blue-300 flex items-center justify-center active:bg-blue-100">-</button>
+                                <input type="number" id="dia-input" min="40" max="160" required placeholder="80"
+                                    class="w-full text-center text-3xl font-black p-2 bg-white border-2 border-blue-300 rounded-xl focus:outline-none text-blue-600">
+                                <button type="button" onclick="adjustValue('dia', 5)" class="w-12 h-12 bg-white text-blue-700 rounded-xl font-black text-2xl shadow border border-blue-300 flex items-center justify-center active:bg-blue-100">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pulse Input -->
+                    <div class="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200">
+                        <label class="block text-base font-bold text-purple-900 mb-1">脈搏 Pulse <span class="text-xs font-normal">(次/分，選填)</span></label>
+                        <input type="number" id="pulse-input" min="30" max="200" placeholder="75"
+                            class="w-full text-2xl font-bold p-3 bg-white border-2 border-purple-300 rounded-xl text-purple-700 focus:outline-none">
+                    </div>
+
+                    <!-- Memo & Tags -->
+                    <div>
+                        <label class="block text-lg font-bold text-slate-700 mb-2">備忘與身體狀態</label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button type="button" onclick="addTag('服藥前')" class="bg-slate-100 hover:bg-emerald-100 text-slate-700 text-base font-medium py-2 px-3 rounded-xl border border-slate-300">💊 服藥前</button>
+                            <button type="button" onclick="addTag('服藥後')" class="bg-slate-100 hover:bg-emerald-100 text-slate-700 text-base font-medium py-2 px-3 rounded-xl border border-slate-300">💊 服藥後</button>
+                            <button type="button" onclick="addTag('心情平穩')" class="bg-slate-100 hover:bg-emerald-100 text-slate-700 text-base font-medium py-2 px-3 rounded-xl border border-slate-300">😊 心情平穩</button>
+                            <button type="button" onclick="addTag('有點頭暈')" class="bg-slate-100 hover:bg-emerald-100 text-slate-700 text-base font-medium py-2 px-3 rounded-xl border border-slate-300">🌀 有點頭暈</button>
+                        </div>
+                        <input type="text" id="memo-input" placeholder="可自行輸入或點選上方標籤..."
+                            class="w-full text-lg p-3 bg-slate-50 border-2 border-slate-300 rounded-xl focus:outline-none focus:border-emerald-600">
+                    </div>
+
+                    <!-- Photo Upload for BP Monitor Screen -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-300">
+                        <label class="block text-lg font-bold text-slate-700 mb-2 flex items-center justify-between">
+                            <span>📸 血壓計螢幕拍照上傳</span>
+                            <span class="text-xs font-normal text-slate-500">方便醫師核對</span>
+                        </label>
+                        <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)"
+                            class="w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-base file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                        
+                        <!-- Image Preview -->
+                        <div id="photo-preview-container" class="mt-3 hidden relative">
+                            <img id="photo-preview" src="" alt="血壓計照片預覽" class="w-full h-48 object-cover rounded-xl border-2 border-emerald-300">
+                            <button type="button" onclick="removePhoto()" class="absolute top-2 right-2 bg-red-600 text-white w-9 h-9 rounded-full font-bold shadow-lg flex items-center justify-center">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-2xl font-black py-4 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>立即儲存紀錄</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Tab 2: 趨勢與歷史紀錄 (History & Chart) -->
+        <section id="tab-history" class="space-y-4 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5 border-2 border-emerald-100">
+                <h2 class="text-2xl font-bold text-emerald-900 mb-3 flex items-center">
+                    <i class="fa-solid fa-chart-line text-emerald-600 mr-2 text-xl"></i> 血壓趨勢圖表
+                </h2>
+                <div class="relative w-full h-64 bg-slate-50 rounded-2xl p-2 border border-slate-200">
+                    <canvas id="bpChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-lg p-5 border-2 border-emerald-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-emerald-900 flex items-center">
+                        <i class="fa-solid fa-list text-emerald-600 mr-2 text-xl"></i> 歷史測量清單
+                    </h2>
+                    <span id="record-count" class="bg-emerald-100 text-emerald-800 text-sm font-bold px-3 py-1 rounded-full">0 筆記錄</span>
+                </div>
+                <div id="records-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    <!-- Dynamic records inserted here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: 醫師看診報表 (Doctor Report) -->
+        <section id="tab-doctor" class="space-y-4 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5 border-2 border-emerald-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-emerald-900 flex items-center">
+                        <i class="fa-solid fa-stethoscope text-emerald-600 mr-2 text-xl"></i> 醫師看診專用報表
+                    </h2>
+                </div>
+                <p class="text-base text-slate-600 mb-4">
+                    提供醫師門診參考之血壓統計數據，長輩就醫時可直接出示或一鍵複製文字。
+                </p>
+
+                <!-- Range Selector -->
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <button onclick="setReportRange(7)" id="range-7" class="py-2.5 px-3 rounded-xl font-bold text-base bg-emerald-600 text-white shadow">最近 7 天</button>
+                    <button onclick="setReportRange(14)" id="range-14" class="py-2.5 px-3 rounded-xl font-bold text-base bg-slate-100 text-slate-700">最近 14 天</button>
+                    <button onclick="setReportRange(30)" id="range-30" class="py-2.5 px-3 rounded-xl font-bold text-base bg-slate-100 text-slate-700">最近 30 天</button>
+                </div>
+
+                <!-- Report Summary Card -->
+                <div id="doctor-report-summary" class="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200 mb-4 space-y-3">
+                    <!-- Dynamic Summary -->
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="copyDoctorReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>一鍵複製摘要</span>
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-print"></i>
+                        <span>列印看診報表</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: 家人同步與設定 (Family Sync & Settings) -->
+        <section id="tab-family" class="space-y-4 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5 border-2 border-emerald-100 space-y-4">
+                <h2 class="text-2xl font-bold text-emerald-900 flex items-center">
+                    <i class="fa-solid fa-users text-emerald-600 mr-2 text-xl"></i> 家人隨時查看功能
+                </h2>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-emerald-900">
+                    <p class="font-bold text-lg mb-2"><i class="fa-solid fa-circle-info text-emerald-600 mr-1"></i> 如何讓子女隨時關心？</p>
+                    <p class="text-base leading-relaxed text-slate-700">
+                        本網頁具備雲端同步功能。長輩在家中測量血壓並按下儲存後，外出的子女只要點進同一個網頁連結，就能立刻看到最新的測量數值與歷史趨勢圖！
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <label class="block text-base font-bold text-slate-700 mb-2">快速分享網址給家人</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="share-link-input" readonly
+                            class="w-full text-sm p-3 bg-white border border-slate-300 rounded-xl text-slate-600 font-mono select-all">
+                        <button onclick="copyShareLink()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-3 rounded-xl whitespace-nowrap shadow">
+                            <i class="fa-solid fa-link mr-1"></i> 複製
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="exportDataJSON()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl border border-slate-300 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>備份所有紀錄 (匯出檔案)</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Senior Friendly) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-emerald-100 shadow-2xl z-50">
+        <div class="max-w-md mx-auto grid grid-cols-4 py-2 px-2">
+            <button onclick="switchTab('record')" id="nav-record" class="flex flex-col items-center justify-center py-2 text-emerald-600 font-bold transition-all">
+                <i class="fa-solid fa-pen-to-square text-2xl mb-1"></i>
+                <span class="text-xs">記錄血壓</span>
+            </button>
+            <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center justify-center py-2 text-slate-400 font-bold transition-all">
+                <i class="fa-solid fa-chart-line text-2xl mb-1"></i>
+                <span class="text-xs">趨勢歷史</span>
+            </button>
+            <button onclick="switchTab('doctor')" id="nav-doctor" class="flex flex-col items-center justify-center py-2 text-slate-400 font-bold transition-all">
+                <i class="fa-solid fa-stethoscope text-2xl mb-1"></i>
+                <span class="text-xs">醫師報表</span>
+            </button>
+            <button onclick="switchTab('family')" id="nav-family" class="flex flex-col items-center justify-center py-2 text-slate-400 font-bold transition-all">
+                <i class="fa-solid fa-users text-2xl mb-1"></i>
+                <span class="text-xs">家人同步</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Photo Modal View (Fullscreen image) -->
+    <div id="photo-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="closePhotoModal()">
+        <div class="relative max-w-lg w-full bg-white rounded-3xl p-4 overflow-hidden" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xl font-bold text-slate-800">血壓計照片記錄</h3>
+                <button onclick="closePhotoModal()" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-700 font-bold flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <img id="modal-img" src="" alt="血壓計放大照片" class="w-full max-h-[70vh] object-contain rounded-2xl border border-slate-200">
+        </div>
+    </div>
+
+    <!-- User Profile Management Modal (New) -->
+    <div id="user-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-2xl font-black text-emerald-900 flex items-center">
+                    <i class="fa-solid fa-users-gear text-emerald-600 mr-2"></i> 長輩成員管理
+                </h3>
+                <button onclick="closeUserModal()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 font-bold flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Existing Users List -->
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-700">選擇或管理已建立的成員：</label>
+                <div id="user-list-container" class="space-y-2">
+                    <!-- Dynamic user list items -->
+                </div>
+            </div>
+
+            <!-- Add New User Form -->
+            <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 space-y-3 pt-3">
+                <h4 class="font-bold text-lg text-slate-800 flex items-center">
+                    <i class="fa-solid fa-user-plus text-emerald-600 mr-2"></i> 新增長輩成員
+                </h4>
+                <input type="text" id="new-user-name" placeholder="請輸入姓名或稱呼 (例：王阿嬤)"
+                    class="w-full text-lg p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-600 font-bold">
+                <button onclick="addNewUser()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg py-3 rounded-xl shadow">
+                    新增成員
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl text-lg font-bold z-50 hidden transition-all duration-300">
+        通知訊息
+    </div>
+
+    <!-- Firebase SDK Imports & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'elder-bp-guardian-v1';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let db = null;
+        let auth = null;
+        let isCloudMode = false;
+
+        // User Profile & Application State
+        let users = [
+            { id: 'user_default', name: '預設長輩' }
+        ];
+        let currentUserId = 'user_default';
+        let records = [];
+        let currentTimeSlot = '早晨 Morning';
+        let currentPhotoBase64 = '';
+        let reportDays = 7;
+        let bpChartInstance = null;
+
+        // Initialize User Settings from LocalStorage
+        function initUsers() {
+            const savedUsers = localStorage.getItem('elder_bp_users');
+            if (savedUsers) {
+                try {
+                    users = JSON.parse(savedUsers);
+                } catch (e) {
+                    users = [{ id: 'user_default', name: '預設長輩' }];
+                }
+            }
+            const savedCurrentUserId = localStorage.getItem('elder_bp_current_user');
+            if (savedCurrentUserId && users.some(u => u.id === savedCurrentUserId)) {
+                currentUserId = savedCurrentUserId;
+            } else if (users.length > 0) {
+                currentUserId = users[0].id;
+            }
+            renderUserDropdown();
+        }
+
+        function saveUsersToStorage() {
+            localStorage.setItem('elder_bp_users', JSON.stringify(users));
+            localStorage.setItem('elder_bp_current_user', currentUserId);
+            renderUserDropdown();
+        }
+
+        function renderUserDropdown() {
+            const selector = document.getElementById('user-selector');
+            selector.innerHTML = users.map(u => 
+                `<option value="${u.id}" ${u.id === currentUserId ? 'selected' : ''}>${u.name}</option>`
+            ).join('');
+
+            const currentUser = users.find(u => u.id === currentUserId) || { name: '未知長輩' };
+            const displayNameEl = document.getElementById('current-user-display-name');
+            if (displayNameEl) {
+                displayNameEl.innerText = currentUser.name;
+            }
+        }
+
+        window.switchUser = function(userId) {
+            currentUserId = userId;
+            localStorage.setItem('elder_bp_current_user', currentUserId);
+            renderUserDropdown();
+            showToast(`已切換至長輩：${users.find(u => u.id === currentUserId)?.name || ''}`);
+            updateUI();
+        };
+
+        window.openUserManagementModal = function() {
+            renderUserListModal();
+            document.getElementById('user-modal').classList.remove('hidden');
+        };
+
+        window.closeUserModal = function() {
+            document.getElementById('user-modal').classList.add('hidden');
+        };
+
+        function renderUserListModal() {
+            const container = document.getElementById('user-list-container');
+            container.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl border border-slate-200">
+                    <span class="font-bold text-lg text-slate-800">${u.name} ${u.id === currentUserId ? '<span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full ml-2">當前使用中</span>' : ''}</span>
+                    <div class="flex space-x-2">
+                        <button onclick="editUserName('${u.id}')" class="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">重新命名</button>
+                        ${users.length > 1 ? `<button onclick="deleteUser('${u.id}')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">刪除</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.addNewUser = function() {
+            const input = document.getElementById('new-user-name');
+            const name = input.value.trim();
+            if (!name) {
+                showToast('❌ 請輸入成員姓名');
+                return;
+            }
+            const newUser = {
+                id: 'user_' + Date.now(),
+                name: name
+            };
+            users.push(newUser);
+            currentUserId = newUser.id;
+            saveUsersToStorage();
+            input.value = '';
+            renderUserListModal();
+            showToast(`✅ 已新增長輩：${name}`);
+            updateUI();
+        };
+
+        window.editUserName = function(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            const newName = prompt('請輸入新的姓名：', user.name);
+            if (newName && newName.trim()) {
+                user.name = newName.trim();
+                saveUsersToStorage();
+                renderUserListModal();
+                showToast('✅ 姓名更新成功');
+                updateUI();
+            }
+        };
+
+        window.deleteUser = function(userId) {
+            if (users.length <= 1) {
+                showToast('❌ 至少需保留一位成員');
+                return;
+            }
+            if (!confirm('確定要刪除此成員嗎？該成員對應的紀錄也將不再顯示。')) return;
+
+            users = users.filter(u => u.id !== userId);
+            if (currentUserId === userId) {
+                currentUserId = users[0].id;
+            }
+            saveUsersToStorage();
+            renderUserListModal();
+            showToast('🗑️ 已刪除成員');
+            updateUI();
+        };
+
+        // Initialize Firebase if config exists
+        async function initFirebase() {
+            initUsers();
+
+            if (firebaseConfig) {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    isCloudMode = true;
+                    document.getElementById('sync-text').innerText = '雲端同步中 (家人可見)';
+                    document.getElementById('sync-status').className = 'bg-emerald-800 text-emerald-200 text-xs px-2.5 py-1.5 rounded-full font-medium flex items-center space-x-1';
+                    
+                    // Listen to Firestore public collection
+                    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'bp_records'));
+                    onSnapshot(q, (snapshot) => {
+                        records = [];
+                        snapshot.forEach((docSnap) => {
+                            records.push({ id: docSnap.id, ...docSnap.data() });
+                        });
+                        // Sort by date & time descending
+                        records.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+                        updateUI();
+                    }, (error) => {
+                        console.error("Firestore sync error:", error);
+                        initLocalStorageFallback();
+                    });
+                } catch (e) {
+                    console.error("Firebase init failed:", e);
+                    initLocalStorageFallback();
+                }
+            } else {
+                initLocalStorageFallback();
+            }
+        }
+
+        function initLocalStorageFallback() {
+            isCloudMode = false;
+            document.getElementById('sync-text').innerText = '本機記錄模式';
+            document.getElementById('sync-status').className = 'bg-amber-700 text-amber-200 text-xs px-2.5 py-1.5 rounded-full font-medium flex items-center space-x-1';
+            
+            const saved = localStorage.getItem('elder_bp_records');
+            if (saved) {
+                try {
+                    records = JSON.parse(saved);
+                } catch (e) {
+                    records = [];
+                }
+            }
+            updateUI();
+        }
+
+        window.saveRecordToStorage = async function(newRecord) {
+            // Attach user id to record
+            newRecord.userId = currentUserId;
+
+            if (isCloudMode && db && auth && auth.currentUser) {
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'bp_records'), newRecord);
+                    showToast('✅ 雲端儲存成功！家人已同步');
+                    return;
+                } catch (e) {
+                    console.error("Cloud save failed, falling back to local:", e);
+                }
+            }
+            // Local fallback
+            records.unshift({ id: 'local_' + Date.now(), ...newRecord });
+            localStorage.setItem('elder_bp_records', JSON.stringify(records));
+            showToast('✅ 本機儲存成功！');
+            updateUI();
+        };
+
+        window.deleteRecordFromStorage = async function(id) {
+            if (!confirm('確定要刪除這筆測量記錄嗎？')) return;
+            if (isCloudMode && db && !id.startsWith('local_')) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bp_records', id));
+                    showToast('🗑️ 刪除成功');
+                    return;
+                } catch (e) {
+                    console.error("Cloud delete failed:", e);
+                }
+            }
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem('elder_bp_records', JSON.stringify(records));
+            showToast('🗑️ 刪除成功');
+            updateUI();
+        };
+
+        // UI & Form Logic
+        window.setTimeSlot = function(slot) {
+            currentTimeSlot = slot;
+            const btnM = document.getElementById('btn-morning');
+            const btnE = document.getElementById('btn-evening');
+            if (slot === '早晨 Morning') {
+                btnM.className = "py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-amber-500 text-white border-amber-600 shadow-md";
+                btnE.className = "py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-slate-100 text-slate-700 border-slate-300";
+            } else {
+                btnE.className = "py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-indigo-600 text-white border-indigo-700 shadow-md";
+                btnM.className = "py-4 px-4 rounded-2xl font-bold text-xl flex items-center justify-center space-x-2 border-2 transition-all bg-slate-100 text-slate-700 border-slate-300";
+            }
+        };
+
+        window.adjustValue = function(field, amount) {
+            const input = document.getElementById(field + '-input');
+            let val = parseInt(input.value) || (field === 'sys' ? 120 : 80);
+            val += amount;
+            input.value = val;
+        };
+
+        window.addTag = function(tagText) {
+            const memoInput = document.getElementById('memo-input');
+            if (memoInput.value) {
+                memoInput.value += '、' + tagText;
+            } else {
+                memoInput.value = tagText;
+            }
+        };
+
+        window.handlePhotoUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentPhotoBase64 = e.target.result;
+                document.getElementById('photo-preview').src = currentPhotoBase64;
+                document.getElementById('photo-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.removePhoto = function() {
+            currentPhotoBase64 = '';
+            document.getElementById('photo-input').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+        };
+
+        window.handleFormSubmit = function(event) {
+            event.preventDefault();
+            const date = document.getElementById('record-date').value;
+            const sys = parseInt(document.getElementById('sys-input').value);
+            const dia = parseInt(document.getElementById('dia-input').value);
+            const pulse = parseInt(document.getElementById('pulse-input').value) || 0;
+            const memo = document.getElementById('memo-input').value;
+
+            if (!date || isNaN(sys) || isNaN(dia)) {
+                showToast('❌ 請填寫完整的日期與血壓數值');
+                return;
+            }
+
+            const evaluation = evaluateBP(sys, dia);
+
+            const newRecord = {
+                date,
+                timeSlot: currentTimeSlot,
+                sys,
+                dia,
+                pulse,
+                memo,
+                photoUrl: currentPhotoBase64,
+                evaluationLevel: evaluation.level,
+                evaluationTitle: evaluation.title,
+                createdAt: new Date().toISOString()
+            };
+
+            window.saveRecordToStorage(newRecord);
+
+            // Reset form
+            document.getElementById('sys-input').value = '';
+            document.getElementById('dia-input').value = '';
+            document.getElementById('pulse-input').value = '';
+            document.getElementById('memo-input').value = '';
+            window.removePhoto();
+            
+            // Switch to history tab to see result
+            switchTab('history');
+        };
+
+        // Taiwan BP Guidelines Evaluation Function
+        function evaluateBP(sys, dia) {
+            if (sys > 180 || dia >= 120) {
+                return { level: 'crisis', title: '危急狀況（立即就醫）', color: 'bg-red-600 text-white', badge: 'bg-red-100 text-red-800 border-red-300' };
+            }
+            if (sys >= 140 || dia >= 90) {
+                return { level: 'stage2', title: '第二期高血壓', color: 'bg-red-500 text-white', badge: 'bg-red-100 text-red-800 border-red-300' };
+            }
+            if ((sys >= 130 && sys <= 139) || (dia >= 80 && dia <= 89)) {
+                return { level: 'stage1', title: '第一期高血壓', color: 'bg-orange-500 text-white', badge: 'bg-orange-100 text-orange-800 border-orange-300' };
+            }
+            if ((sys >= 120 && sys <= 129) && dia < 80) {
+                return { level: 'elevated', title: '血壓偏高 (正常高值)', color: 'bg-yellow-400 text-slate-900', badge: 'bg-yellow-100 text-yellow-800 border-yellow-300' };
+            }
+            if (sys < 90 || dia < 60) {
+                return { level: 'low', title: '血壓偏低', color: 'bg-blue-500 text-white', badge: 'bg-blue-100 text-blue-800 border-blue-300' };
+            }
+            return { level: 'normal', title: '血壓正常', color: 'bg-emerald-600 text-white', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+        }
+
+        window.switchTab = function(tabName) {
+            const tabs = ['record', 'history', 'doctor', 'family'];
+            tabs.forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                const navBtn = document.getElementById('nav-' + t);
+                navBtn.className = "flex flex-col items-center justify-center py-2 text-slate-400 font-bold transition-all";
+            });
+
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.getElementById('nav-' + tabName).className = "flex flex-col items-center justify-center py-2 text-emerald-600 font-bold transition-all scale-105";
+
+            if (tabName === 'history') {
+                renderChart();
+            }
+        };
+
+        function getUserFilteredRecords() {
+            // Filter records for the current user (if userId missing, default to user_default for backward compatibility)
+            return records.filter(r => (r.userId || 'user_default') === currentUserId);
+        }
+
+        function updateUI() {
+            const userRecords = getUserFilteredRecords();
+
+            // Check crisis for latest record of active user
+            const crisisBanner = document.getElementById('crisis-banner');
+            if (userRecords.length > 0 && (userRecords[0].sys > 180 || userRecords[0].dia >= 120)) {
+                crisisBanner.classList.remove('hidden');
+                document.getElementById('crisis-msg').innerText = `最新測量 (${userRecords[0].sys}/${userRecords[0].dia} mmHg) 達危急狀況！若伴隨頭暈、胸悶請立即就醫。`;
+            } else {
+                crisisBanner.classList.add('hidden');
+            }
+
+            // Render Records List
+            document.getElementById('record-count').innerText = userRecords.length + ' 筆記錄';
+            const listEl = document.getElementById('records-list');
+            if (userRecords.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-10 text-slate-400">
+                        <i class="fa-solid fa-clipboard-list text-5xl mb-3"></i>
+                        <p class="text-lg">目前尚無此成員的血壓記錄。</p>
+                    </div>`;
+            } else {
+                listEl.innerHTML = userRecords.map(r => {
+                    const evalObj = evaluateBP(r.sys, r.dia);
+                    return `
+                        <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 flex flex-col space-y-3 shadow-sm">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-emerald-700 text-white font-bold px-3 py-1 rounded-xl text-base">${r.date}</span>
+                                    <span class="text-slate-600 font-bold text-base flex items-center">
+                                        <i class="fa-solid ${r.timeSlot.includes('早') ? 'fa-sun text-amber-500' : 'fa-moon text-indigo-500'} mr-1.5"></i>
+                                        ${r.timeSlot}
+                                    </span>
+                                </div>
+                                <button onclick="deleteRecordFromStorage('${r.id}')" class="text-red-500 hover:text-red-700 p-2 text-xl">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-baseline space-x-3">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">收縮壓 / 舒張壓</span>
+                                        <span class="text-3xl font-black text-slate-900">${r.sys} / ${r.dia}</span>
+                                        <span class="text-sm text-slate-500 font-bold">mmHg</span>
+                                    </div>
+                                    ${r.pulse ? `
+                                    <div class="border-l pl-3 border-slate-200">
+                                        <span class="text-xs text-slate-500 block">脈搏</span>
+                                        <span class="text-xl font-bold text-purple-700">${r.pulse}</span>
+                                        <span class="text-xs text-slate-500">次/分</span>
+                                    </div>` : ''}
+                                </div>
+                                <span class="px-3 py-1.5 rounded-xl text-sm font-black border ${evalObj.badge}">
+                                    ${evalObj.title}
+                                </span>
+                            </div>
+
+                            ${r.memo ? `<p class="text-base text-slate-700 bg-emerald-50/50 p-2 rounded-lg"><i class="fa-solid fa-note-sticky text-emerald-600 mr-1"></i> ${r.memo}</p>` : ''}
+
+                            ${r.photoUrl ? `
+                                <div class="flex items-center space-x-2 pt-1">
+                                    <img src="${r.photoUrl}" onclick="openPhotoModal('${r.photoUrl}')" class="w-16 h-16 object-cover rounded-xl border-2 border-emerald-300 cursor-pointer shadow hover:opacity-90">
+                                    <span class="text-xs text-slate-500">點擊圖片可放大檢視血壓計畫面</span>
+                                </div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderDoctorReport();
+        }
+
+        // Render Chart.js
+        function renderChart() {
+            const userRecords = getUserFilteredRecords();
+            const ctx = document.getElementById('bpChart').getContext('2d');
+            const recent14 = [...userRecords].reverse().slice(-14); // Last 14 records chronologically
+
+            const labels = recent14.map(r => `${r.date.slice(5)} (${r.timeSlot.slice(0,1)})`);
+            const sysData = recent14.map(r => r.sys);
+            const diaData = recent14.map(r => r.dia);
+
+            if (bpChartInstance) {
+                bpChartInstance.destroy();
+            }
+
+            bpChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '收縮壓 SYS (mmHg)',
+                            data: sysData,
+                            borderColor: '#dc2626',
+                            backgroundColor: '#dc2626',
+                            borderWidth: 3,
+                            tension: 0.2
+                        },
+                        {
+                            label: '舒張壓 DIA (mmHg)',
+                            data: diaData,
+                            borderColor: '#2563eb',
+                            backgroundColor: '#2563eb',
+                            borderWidth: 3,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 50,
+                            max: 200,
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 14, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        // Doctor Report logic
+        window.setReportRange = function(days) {
+            reportDays = days;
+            ['7', '14', '30'].forEach(d => {
+                const btn = document.getElementById('range-' + d);
+                if (parseInt(d) === days) {
+                    btn.className = "py-2.5 px-3 rounded-xl font-bold text-base bg-emerald-600 text-white shadow";
+                } else {
+                    btn.className = "py-2.5 px-3 rounded-xl font-bold text-base bg-slate-100 text-slate-700";
+                }
+            });
+            renderDoctorReport();
+        };
+
+        function renderDoctorReport() {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - reportDays);
+
+            const userRecords = getUserFilteredRecords();
+            const filtered = userRecords.filter(r => new Date(r.date) >= cutoffDate);
+            const summaryEl = document.getElementById('doctor-report-summary');
+            const currentUser = users.find(u => u.id === currentUserId) || { name: '' };
+
+            if (filtered.length === 0) {
+                summaryEl.innerHTML = `<p class="text-center text-slate-600 py-4 text-base font-bold">${currentUser.name} 最近 ${reportDays} 天內尚無測量記錄。</p>`;
+                return;
+            }
+
+            const avgSys = Math.round(filtered.reduce((acc, r) => acc + r.sys, 0) / filtered.length);
+            const avgDia = Math.round(filtered.reduce((acc, r) => acc + r.dia, 0) / filtered.length);
+            const avgPulse = filtered.filter(r => r.pulse).length > 0 ? Math.round(filtered.filter(r => r.pulse).reduce((acc, r) => acc + r.pulse, 0) / filtered.filter(r => r.pulse).length) : 'N/A';
+
+            summaryEl.innerHTML = `
+                <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
+                    <span class="text-base font-bold text-emerald-900">長輩姓名</span>
+                    <span class="text-xl font-black text-emerald-900">${currentUser.name}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
+                    <span class="text-base font-bold text-emerald-900">統計天數 / 筆數</span>
+                    <span class="text-lg font-black text-emerald-900">最近 ${reportDays} 天 (${filtered.length} 筆測量)</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
+                    <span class="text-base font-bold text-emerald-900">平均收縮壓 / 舒張壓</span>
+                    <span class="text-2xl font-black text-red-600">${avgSys} / ${avgDia} <span class="text-sm font-normal text-slate-600">mmHg</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-base font-bold text-emerald-900">平均脈搏</span>
+                    <span class="text-xl font-black text-purple-700">${avgPulse} <span class="text-sm font-normal text-slate-600">次/分</span></span>
+                </div>
+            `;
+        }
+
+        window.copyDoctorReport = function() {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - reportDays);
+            const userRecords = getUserFilteredRecords();
+            const filtered = userRecords.filter(r => new Date(r.date) >= cutoffDate);
+            const currentUser = users.find(u => u.id === currentUserId) || { name: '長輩' };
+
+            if (filtered.length === 0) {
+                showToast('❌ 無資料可複製');
+                return;
+            }
+
+            const avgSys = Math.round(filtered.reduce((acc, r) => acc + r.sys, 0) / filtered.length);
+            const avgDia = Math.round(filtered.reduce((acc, r) => acc + r.dia, 0) / filtered.length);
+
+            let text = `【血壓量測醫師看診摘要】\n長輩姓名：${currentUser.name}\n統計區間：最近 ${reportDays} 天 (${filtered.length}筆)\n平均血壓：${avgSys} / ${avgDia} mmHg\n\n詳細紀錄：\n`;
+            filtered.forEach(r => {
+                text += `- ${r.date} (${r.timeSlot}): ${r.sys}/${r.dia} mmHg${r.memo ? ' ['+r.memo+']' : ''}\n`;
+            });
+
+            // Use fallback copy method
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast('📋 已成功複製醫師看診摘要！');
+        };
+
+        // Photo modal
+        window.openPhotoModal = function(url) {
+            document.getElementById('modal-img').src = url;
+            document.getElementById('photo-modal').classList.remove('hidden');
+        };
+
+        window.closePhotoModal = function() {
+            document.getElementById('photo-modal').classList.add('hidden');
+        };
+
+        // Share link copy
+        window.copyShareLink = function() {
+            const linkInput = document.getElementById('share-link-input');
+            linkInput.value = window.location.href;
+            linkInput.select();
+            document.execCommand('copy');
+            showToast('🔗 網址已複製！可直接傳給家人');
+        };
+
+        window.exportDataJSON = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ users, records }, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `blood_pressure_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('💾 備份檔案已下載');
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Set default date to today on load
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('record-date').value = today;
+            document.getElementById('share-link-input').value = window.location.href;
+
+            initFirebase();
+        };
+    </script>
+</body>
+</html>
