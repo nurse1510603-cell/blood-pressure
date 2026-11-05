@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>居家血壓與健康紀錄 - 長輩視覺人體圖版</title>
+  <title>居家血壓與健康紀錄 - 日期自訂與雲端關懷版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -91,8 +91,25 @@
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4 flex items-center justify-between">
           <span><i class="fa-solid fa-pen-to-square text-emerald-600 mr-2"></i>輸入測量數值</span>
-          <span class="text-xs text-gray-500 font-normal">早晚定時測量</span>
+          <span class="text-xs text-gray-500 font-normal">可手動調動日期</span>
         </h2>
+
+        <!-- 新增：日期與時間自訂調動區塊 -->
+        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 mb-4">
+          <div class="text-xs font-black text-emerald-800 mb-2 flex items-center">
+            <i class="fa-solid fa-calendar-days text-emerald-600 mr-1.5"></i> 測量日期與時間調動：
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">日期：</label>
+              <input type="date" id="bp-date-input" class="w-full bg-white border border-emerald-300 rounded-xl p-2 font-bold text-sm text-slate-800 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">時間：</label>
+              <input type="time" id="bp-time-input" class="w-full bg-white border border-emerald-300 rounded-xl p-2 font-bold text-sm text-slate-800 focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+        </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
           <button id="time-morning" onclick="setTimeSlot('morning')" class="py-3 rounded-2xl font-black text-lg border-2 border-amber-400 bg-amber-50 text-amber-800 flex items-center justify-center gap-2">
@@ -235,13 +252,30 @@
       </div>
     </section>
 
-    <!-- 3. 疼痛紀錄頁籤 (左右兩側視覺對照人體圖) -->
+    <!-- 3. 疼痛紀錄頁籤 -->
     <section id="tab-pain" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4 flex items-center justify-between">
           <span><i class="fa-solid fa-street-view text-emerald-600 mr-2"></i>左右區分視覺人體點選圖</span>
           <span class="text-xs text-emerald-700 font-bold">點擊可愛圖標選部位</span>
         </h2>
+
+        <!-- 新增：疼痛紀錄日期與時間調動區塊 -->
+        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 mb-4">
+          <div class="text-xs font-black text-emerald-800 mb-2 flex items-center">
+            <i class="fa-solid fa-clock text-emerald-600 mr-1.5"></i> 疼痛紀錄日期與時間調動：
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">日期：</label>
+              <input type="date" id="pain-date-input" class="w-full bg-white border border-emerald-300 rounded-xl p-2 font-bold text-sm text-slate-800 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">時間：</label>
+              <input type="time" id="pain-time-input" class="w-full bg-white border border-emerald-300 rounded-xl p-2 font-bold text-sm text-slate-800 focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+        </div>
 
         <!-- 人體圖切換 (正面 / 背面) -->
         <div class="flex gap-2 mb-4">
@@ -257,60 +291,37 @@
         <div id="body-view-front" class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200">
           <div class="text-center font-black text-slate-700 text-sm mb-3">【正面】請點選左側或右側部位：</div>
 
-          <!-- 1. 正面頭部 -->
+          <!-- 頭部 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
             <div class="text-xs font-black text-amber-700 mb-2 text-center"><i class="fa-solid fa-head-side-virus mr-1"></i>頭部與顏面 (正面/側邊)</div>
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👈 左側太陽穴(耳旁)
-              </button>
-              <button onclick="selectZone('右側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👉 右側太陽穴(耳旁)
-              </button>
+              <button onclick="selectZone('左側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側太陽穴(耳旁)</button>
+              <button onclick="selectZone('右側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側太陽穴(耳旁)</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectZone('左側-前額/額葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👈 左側前額(額頭)
-              </button>
-              <button onclick="selectZone('右側-前額/額葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👉 右側前額(額頭)
-              </button>
+              <button onclick="selectZone('左側-前額/額葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側前額(額頭)</button>
+              <button onclick="selectZone('右側-前額/額葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側前額(額頭)</button>
             </div>
           </div>
 
-          <!-- 2. 正面手部 (左臂 / 右臂) -->
+          <!-- 手部 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
             <div class="text-xs font-black text-blue-700 mb-2 text-center"><i class="fa-solid fa-hand mr-1"></i>手部大關節 (左右區分)</div>
-            <!-- 上臂 -->
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左手上臂(大臂)')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-hand-back-fist text-blue-600"></i> 左手上臂
-              </button>
-              <button onclick="selectZone('右手上臂(大臂)')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-hand-back-fist text-blue-600"></i> 右手上臂
-              </button>
+              <button onclick="selectZone('左手上臂(大臂)')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-hand-back-fist text-blue-600"></i> 左手上臂</button>
+              <button onclick="selectZone('右手上臂(大臂)')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-hand-back-fist text-blue-600"></i> 右手上臂</button>
             </div>
-            <!-- 肘部 -->
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左手肘關節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-bone text-blue-600"></i> 左手肘部
-              </button>
-              <button onclick="selectZone('右手肘關節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-bone text-blue-600"></i> 右手肘部
-              </button>
+              <button onclick="selectZone('左手肘關節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-bone text-blue-600"></i> 左手肘部</button>
+              <button onclick="selectZone('右手肘關節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-bone text-blue-600"></i> 右手肘部</button>
             </div>
-            <!-- 下臂 -->
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectZone('左手下臂與手掌')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-hand text-blue-600"></i> 左手下臂
-              </button>
-              <button onclick="selectZone('右手下臂與手掌')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                <i class="fa-solid fa-hand text-blue-600"></i> 右手下臂
-              </button>
+              <button onclick="selectZone('左手下臂與手掌')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-hand text-blue-600"></i> 左手下臂</button>
+              <button onclick="selectZone('右手下臂與手掌')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1"><i class="fa-solid fa-hand text-blue-600"></i> 右手下臂</button>
             </div>
           </div>
 
-          <!-- 3. 正面軀幹 (胸腹) -->
+          <!-- 軀幹 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
             <div class="text-xs font-black text-purple-700 mb-2 text-center"><i class="fa-solid fa-heart-pulse mr-1"></i>胸部與腹部</div>
             <div class="grid grid-cols-2 gap-2">
@@ -321,53 +332,32 @@
             </div>
           </div>
 
-          <!-- 4. 正面腳部 (左腿 / 右腿) -->
+          <!-- 腳部 -->
           <div class="bg-white p-3 rounded-2xl border border-emerald-100">
             <div class="text-xs font-black text-emerald-700 mb-2 text-center"><i class="fa-solid fa-socks mr-1"></i>腳部與腿部 (左右區分)</div>
-            <!-- 大腿 -->
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左腳大腿(上腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👈 左大腿 (上腿)
-              </button>
-              <button onclick="selectZone('右腳大腿(上腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👉 右大腿 (上腿)
-              </button>
+              <button onclick="selectZone('左腳大腿(上腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">👈 左大腿 (上腿)</button>
+              <button onclick="selectZone('右腳大腿(上腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">👉 右大腿 (上腿)</button>
             </div>
-            <!-- 膝蓋 -->
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左腳膝蓋')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                🦵 左膝蓋
-              </button>
-              <button onclick="selectZone('右腳膝蓋')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                🦵 右膝蓋
-              </button>
+              <button onclick="selectZone('左腳膝蓋')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">🦵 左膝蓋</button>
+              <button onclick="selectZone('右腳膝蓋')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">🦵 右膝蓋</button>
             </div>
-            <!-- 小腿 -->
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左腳小腿(下腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👈 左小腿 (下腿)
-              </button>
-              <button onclick="selectZone('右腳小腿(下腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                👉 右小腿 (下腿)
-              </button>
+              <button onclick="selectZone('左腳小腿(下腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">👈 左小腿 (下腿)</button>
+              <button onclick="selectZone('右腳小腿(下腿)')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">👉 右小腿 (下腿)</button>
             </div>
-            <!-- 腳踝與腳底 -->
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectZone('左腳踝/左腳底')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                🐾 左腳踝/腳底
-              </button>
-              <button onclick="selectZone('右腳踝/右腳底')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1">
-                🐾 右腳踝/腳底
-              </button>
+              <button onclick="selectZone('左腳踝/左腳底')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">🐾 左腳踝/腳底</button>
+              <button onclick="selectZone('右腳踝/右腳底')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl text-xs font-black">🐾 右腳踝/腳底</button>
             </div>
           </div>
         </div>
 
-        <!-- 背面人體視覺區域 (隱藏/切換) -->
+        <!-- 背面人體視覺區域 -->
         <div id="body-view-back" class="bg-slate-100 p-4 rounded-3xl border-2 border-slate-200 hidden">
           <div class="text-center font-black text-slate-700 text-sm mb-3">【背面】請點選左側或右側部位：</div>
 
-          <!-- 後腦勺 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-slate-200">
             <div class="text-xs font-black text-slate-700 mb-2 text-center">後腦與後頸</div>
             <div class="grid grid-cols-2 gap-2">
@@ -376,7 +366,6 @@
             </div>
           </div>
 
-          <!-- 肩膀與上背 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-slate-200">
             <div class="text-xs font-black text-slate-700 mb-2 text-center">肩膀與腰背 (左右分區)</div>
             <div class="grid grid-cols-2 gap-2 mb-2">
@@ -389,7 +378,6 @@
             </div>
           </div>
 
-          <!-- 臀部/髖關節 -->
           <div class="bg-white p-3 rounded-2xl border border-slate-200">
             <div class="text-xs font-black text-slate-700 mb-2 text-center">臀部與髖關節</div>
             <div class="grid grid-cols-2 gap-2">
@@ -403,7 +391,6 @@
           已選擇部位：<span id="selected-zone-text" class="text-lg underline">左側-前額/額葉</span>
         </div>
 
-        <!-- 1-10 疼痛指數量表 -->
         <div class="my-5">
           <label class="block font-black text-slate-800 mb-2">
             👉 2. 疼痛程度 (1-10分)：
@@ -415,14 +402,13 @@
           <input type="range" id="pain-score" min="1" max="10" value="1" oninput="updatePainDisplay(this.value)" class="w-full h-4 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
         </div>
 
-        <!-- 豐富疼痛形式與頻率選單 -->
         <div class="grid grid-cols-1 gap-3 mb-5">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">疼痛感覺與形式 (10 種選項)：</label>
             <select id="pain-type" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-base focus:border-emerald-500 focus:outline-none">
               <option value="💓 抽痛 / 血管脈搏跳動痛">💓 抽痛 / 血管脈搏跳動痛</option>
               <option value="📍 刺痛 / 像針扎感">📍 刺痛 / 像針扎感</option>
-              <option value="🪨 悶痛 / 重物壓迫感">🪨 闷痛 / 重物壓迫感</option>
+              <option value="🪨 悶痛 / 重物壓迫感">🪨 悶痛 / 重物壓迫感</option>
               <option value="🔥 熱熱痛 / 燒灼燙感">🔥 熱熱痛 / 燒灼燙感</option>
               <option value="🐜 麻木感 / 像螞蟻在爬">🐜 麻木感 / 像螞蟻在爬</option>
               <option value="😫 酸痛 / 肌肉非常疲憊">😫 酸痛 / 肌肉非常疲憊</option>
@@ -443,7 +429,6 @@
           </div>
         </div>
 
-        <!-- 服藥後改善程度 -->
         <div class="mb-5 bg-indigo-50 p-3.5 rounded-2xl border border-indigo-100">
           <label class="block text-sm font-black text-indigo-950 mb-1">
             <i class="fa-solid fa-square-poll-vertical text-indigo-600 mr-1"></i> 服藥後改善狀況：
@@ -491,11 +476,30 @@
     let tempBPPhoto = '';
     let tempMedPhoto = '';
 
+    // 初始化預設今日日期與時間
     window.onload = function() {
+      initDefaultDateTime();
       initUserSelect();
       loadUserData();
       initChart();
     };
+
+    function initDefaultDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+
+      const currentDate = `${year}-${month}-${day}`;
+      const currentTime = `${hours}:${minutes}`;
+
+      document.getElementById('bp-date-input').value = currentDate;
+      document.getElementById('bp-time-input').value = currentTime;
+      document.getElementById('pain-date-input').value = currentDate;
+      document.getElementById('pain-time-input').value = currentTime;
+    }
 
     function initUserSelect() {
       let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
@@ -653,11 +657,15 @@
       const sys = parseInt(document.getElementById('val-sys').innerText);
       const dia = parseInt(document.getElementById('val-dia').innerText);
       const pulse = parseInt(document.getElementById('val-pulse').innerText);
+      
+      // 讀取自訂日期與時間
+      const dateVal = document.getElementById('bp-date-input').value;
+      const timeVal = document.getElementById('bp-time-input').value;
 
       const record = {
         id: Date.now(),
-        date: new Date().toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
-        time: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}),
+        date: dateVal ? dateVal.slice(5).replace('-', '/') : new Date().toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
+        time: timeVal || new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}),
         slot: currentSlot === 'morning' ? '早上' : '晚上',
         sys, dia, pulse,
         photo: tempBPPhoto
@@ -669,7 +677,7 @@
 
       tempBPPhoto = '';
       document.getElementById('photo-preview').classList.add('hidden');
-      alert(`已成功儲存 ${currentActiveUser} 的血壓紀錄！`);
+      alert(`已成功儲存 ${currentActiveUser} (${record.date} ${record.time}) 的血壓紀錄！`);
       loadUserData();
     }
 
@@ -737,10 +745,14 @@
       const freq = document.getElementById('pain-freq').value;
       const relief = document.getElementById('pain-relief').value;
 
+      // 讀取疼痛的自訂日期與時間
+      const dateVal = document.getElementById('pain-date-input').value;
+      const timeVal = document.getElementById('pain-time-input').value;
+
       const painRec = {
         id: Date.now(),
-        date: new Date().toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
-        time: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}),
+        date: dateVal ? dateVal.slice(5).replace('-', '/') : new Date().toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'}),
+        time: timeVal || new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}),
         part: selectedBodyZone,
         score, type, freq, relief
       };
