@@ -58,13 +58,13 @@
         </div>
       </div>
 
-      <!-- 切換長輩選單 -->
+      <!-- 切換長輩選單與修復後的新增按鈕 -->
       <div class="flex items-center gap-2 bg-emerald-800 p-2 rounded-xl mt-1">
         <i class="fa-solid fa-user-gear text-emerald-300 ml-1"></i>
         <span class="text-sm font-bold whitespace-nowrap">目前長輩：</span>
         <select id="user-select" onchange="switchUser(this.value)" class="bg-white text-emerald-950 font-black text-lg rounded-lg px-3 py-1 flex-1 focus:outline-none">
         </select>
-        <button onclick="promptAddUser()" class="bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1 text-sm font-bold rounded-lg shadow">
+        <button type="button" onclick="promptAddUser()" class="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white px-3.5 py-1.5 text-sm font-bold rounded-lg shadow cursor-pointer">
           <i class="fa-solid fa-user-plus mr-1"></i>新增
         </button>
       </div>
@@ -236,16 +236,16 @@
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
             <div class="text-xs font-black text-amber-700 mb-2 text-center">頭部與顏面 (含頭頂)</div>
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black selected">👈 左側頭頂</button>
-              <button onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
+              <button type="button" onclick="selectZone('左側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black selected">👈 左側頭頂</button>
+              <button type="button" onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
             </div>
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側太陽穴</button>
-              <button onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側太陽穴</button>
+              <button type="button" onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側太陽穴</button>
+              <button type="button" onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側太陽穴</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側前額</button>
-              <button onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側前額</button>
+              <button type="button" onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側前額</button>
+              <button type="button" onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側前額</button>
             </div>
           </div>
         </div>
@@ -452,14 +452,19 @@
       loadUserData();
     }
 
+    // 💡 完整修復且強化的「新增長輩」按鈕邏輯
     function promptAddUser() {
-      const name = prompt("請輸入新長輩姓名:");
+      const name = prompt("請輸入新長輩的姓名或稱呼 (例: 張爺爺):");
       if (name && name.trim() !== "") {
+        const cleanName = name.trim();
         let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
-        users.push(name.trim());
-        localStorage.setItem('bp_user_list', JSON.stringify(users));
+        if (!users.includes(cleanName)) {
+          users.push(cleanName);
+          localStorage.setItem('bp_user_list', JSON.stringify(users));
+        }
+        currentActiveUser = cleanName;
         initUserSelect();
-        switchUser(name.trim());
+        loadUserData();
       }
     }
 
@@ -737,15 +742,13 @@
       loadUserData();
     }
 
-    // 同步雲端與讀取資料 (修復無紀錄狀態)
+    // 同步雲端與讀取資料 (防止無紀錄狀態)
     async function loadUserData() {
-      // 嘗試從 SheetDB 雲端讀取紀錄以防本地快取遺失
       try {
         const res = await fetch(SHEETDB_API_URL);
         const rows = await res.json();
         if (Array.isArray(rows)) {
           const userRows = rows.filter(r => r["長輩"] === currentActiveUser && r["時段"] !== "疼痛紀錄");
-          // 若雲端有資料且本地無資料，可自動還原到本地
           if (userRows.length > 0) {
             const cloudBp = userRows.map((r, idx) => ({
               id: idx + 1000,
@@ -756,7 +759,6 @@
               dia: parseInt(r["舒張壓"]) || 80,
               pulse: parseInt(r["脈搏"]) || 72
             })).reverse();
-            // 合併本地與雲端
             let localBp = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
             if (localBp.length === 0) {
               localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
@@ -819,7 +821,7 @@
     function renderMonthlyCalendar() {
       const year = viewDate.getFullYear();
       const month = viewDate.getMonth();
-      document.getElementById('cal-month-title.innerText` || (document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`));
+      document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`;
 
       const firstDayIndex = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
@@ -827,7 +829,6 @@
       let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
 
       let gridHtml = '';
-      // 空白填補月初
       for (let i = 0; i < firstDayIndex; i++) {
         gridHtml += `<div class="h-14 bg-slate-50/50 rounded-lg"></div>`;
       }
@@ -847,7 +848,6 @@
       }
       document.getElementById('calendar-grid').innerHTML = gridHtml;
 
-      // 當月行程清單過濾
       const monthEvents = events.filter(e => {
         const [eY, eM] = e.date.split('-');
         return parseInt(eY) === year && parseInt(eM) === (month + 1);
