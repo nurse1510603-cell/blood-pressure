@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>長輩健康守護與行事曆 - 雲端直連版</title>
+  <title>長輩健康守護與行事曆 - 全功能雲端同步版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -54,11 +54,11 @@
         </div>
         <div class="bg-emerald-800 text-emerald-200 text-xs px-3 py-1 rounded-full flex items-center gap-1.5 font-bold border border-emerald-600">
           <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
-          <span>🟢 雲端直連同步中</span>
+          <span>🟢 全功能雲端同步</span>
         </div>
       </div>
 
-      <!-- 切換長輩選單與修復後的新增按鈕 -->
+      <!-- 切換長輩選單與新增按鈕 -->
       <div class="flex items-center gap-2 bg-emerald-800 p-2 rounded-xl mt-1">
         <i class="fa-solid fa-user-gear text-emerald-300 ml-1"></i>
         <span class="text-sm font-bold whitespace-nowrap">目前長輩：</span>
@@ -195,9 +195,14 @@
 
       <!-- 長期趨勢與長輩大字列表 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
-        <h2 class="text-xl font-black text-emerald-900 mb-3 flex items-center justify-between">
-          <span><i class="fa-solid fa-chart-line text-emerald-600 mr-2"></i>長期血壓趨勢與歷史</span>
-        </h2>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-black text-emerald-900">
+            <i class="fa-solid fa-chart-line text-emerald-600 mr-2"></i>長期血壓趨勢與歷史
+          </h2>
+          <button onclick="loadUserData()" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl">
+            <i class="fa-solid fa-rotate mr-1"></i>重新整理雲端資料
+          </button>
+        </div>
         <div class="h-56 mb-4">
           <canvas id="bpChart"></canvas>
         </div>
@@ -240,12 +245,12 @@
               <button type="button" onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
             </div>
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button type="button" onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側太陽穴</button>
-              <button type="button" onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側太陽穴</button>
+              <button type="button" onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側太陽穴</button>
+              <button type="button" onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側太陽穴</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側前額</button>
-              <button type="button" onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側前額</button>
+              <button type="button" onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側前額</button>
+              <button type="button" onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側前額</button>
             </div>
           </div>
         </div>
@@ -302,7 +307,7 @@
         </div>
 
         <button onclick="savePainRecord()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 rounded-2xl shadow-lg">
-          <i class="fa-solid fa-floppy-disk mr-1"></i> 儲存疼痛與改善紀錄
+          <i class="fa-solid fa-floppy-disk mr-1"></i> 儲存並雲端同步疼痛紀錄
         </button>
       </div>
 
@@ -313,11 +318,11 @@
       </div>
     </section>
 
-    <!-- 3. 用藥提醒頁籤 (新增三餐飯後與照片備註) -->
+    <!-- 3. 用藥提醒頁籤 -->
     <section id="tab-med" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>手動新增用藥提醒 (含照片)</span>
+          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>手動新增用藥提醒 (含雲端同步)</span>
         </h2>
         <div class="flex flex-col gap-3 mb-4">
           <div>
@@ -345,21 +350,21 @@
           </div>
         </div>
         <button onclick="addMedication()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3 rounded-2xl shadow">
-          <i class="fa-solid fa-plus-circle mr-1"></i> 新增用藥提醒
+          <i class="fa-solid fa-plus-circle mr-1"></i> 新增並同步用藥提醒
         </button>
       </div>
 
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
-        <h2 class="text-xl font-black text-emerald-900 mb-3">長輩用藥指南（直接檢視）</h2>
+        <h2 class="text-xl font-black text-emerald-900 mb-3">長輩用藥指南（雲端同步）</h2>
         <div id="med-list" class="flex flex-col gap-3"></div>
       </div>
     </section>
 
-    <!-- 4. 家人共同看診行事曆頁籤 (月份網格顯示樣式) -->
+    <!-- 4. 家人共同看診行事曆頁籤 -->
     <section id="tab-cal" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程</span>
+          <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程 (雲端同步)</span>
         </h2>
         <div class="flex flex-col gap-3 mb-4">
           <div>
@@ -382,7 +387,7 @@
           </div>
         </div>
         <button onclick="addCalendarEvent()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3 rounded-2xl shadow">
-          <i class="fa-solid fa-calendar-plus mr-1"></i> 新增至行事曆
+          <i class="fa-solid fa-calendar-plus mr-1"></i> 新增並同步至行事曆
         </button>
       </div>
 
@@ -409,7 +414,6 @@
   </main>
 
   <script>
-    // 您的 SheetDB API 網址
     const SHEETDB_API_URL = "https://sheetdb.io/api/v1/rd7b2ievscqzs";
 
     const DEFAULT_USERS = ['王爺爺', '李奶奶'];
@@ -418,7 +422,6 @@
     let currentSlot = 'morning';
     let selectedBodyZone = '左側-頭頂/頂葉';
     
-    // 行事曆當前檢視年月
     let viewDate = new Date();
 
     window.onload = function() {
@@ -452,7 +455,6 @@
       loadUserData();
     }
 
-    // 💡 完整修復且強化的「新增長輩」按鈕邏輯
     function promptAddUser() {
       const name = prompt("請輸入新長輩的姓名或稱呼 (例: 張爺爺):");
       if (name && name.trim() !== "") {
@@ -519,7 +521,6 @@
       }
     }
 
-    // 依據最新國健署 722 血壓標準給予意見
     function updateAlertStatus() {
       const sys = parseInt(document.getElementById('val-sys').innerText);
       const dia = parseInt(document.getElementById('val-dia').innerText);
@@ -575,7 +576,6 @@
       records.unshift(record);
       localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(records));
 
-      // 同步 SheetDB
       fetch(SHEETDB_API_URL, {
         method: "POST",
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -592,7 +592,7 @@
         })
       }).catch(err => console.log(err));
 
-      alert(`已成功儲存 ${currentActiveUser} 的血壓紀錄！`);
+      alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
       loadUserData();
     }
 
@@ -667,11 +667,10 @@
         })
       }).catch(err => console.log(err));
 
-      alert("已成功儲存疼痛與改善紀錄！");
+      alert("已成功儲存並雲端同步疼痛紀錄！");
       loadUserData();
     }
 
-    // 用藥提醒支援圖片
     function addMedication() {
       const name = document.getElementById('med-name').value.trim();
       const time = document.getElementById('med-time').value;
@@ -692,14 +691,30 @@
     }
 
     function saveMedObj(name, time, note, photo) {
+      const recordTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
       let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      meds.push({ id: Date.now(), name, time, note, photo });
+      const newMed = { id: Date.now(), name, time, note, photo };
+      meds.push(newMed);
       localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
+
+      fetch(SHEETDB_API_URL, {
+        method: "POST",
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: [{
+            "時間": recordTime,
+            "長輩": currentActiveUser,
+            "收縮壓": 0, "舒張壓": 0, "脈搏": 0,
+            "時段": "用藥紀錄",
+            "備註": `藥名:${name}, 服用時段:${time}, 備註:${note}`
+          }]
+        })
+      }).catch(err => console.log(err));
       
       document.getElementById('med-name').value = '';
       document.getElementById('med-note').value = '';
       document.getElementById('med-photo-input').value = '';
-      alert("成功新增用藥提醒！");
+      alert("成功新增並同步用藥提醒！");
       loadUserData();
     }
 
@@ -710,7 +725,6 @@
       loadUserData();
     }
 
-    // 行事曆月份切換
     function changeMonth(delta) {
       viewDate.setMonth(viewDate.getMonth() + delta);
       loadUserData();
@@ -725,13 +739,28 @@
       if (!title || !date) { alert("請填寫行程名稱與日期！"); return; }
 
       let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
-      events.push({ id: Date.now(), title, date, time, note });
+      const newEvt = { id: Date.now(), title, date, time, note };
+      events.push(newEvt);
       events.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
       localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(events));
 
+      fetch(SHEETDB_API_URL, {
+        method: "POST",
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: [{
+            "時間": `${date} ${time || '00:00'}`,
+            "長輩": currentActiveUser,
+            "收縮壓": 0, "舒張壓": 0, "脈搏": 0,
+            "時段": "行事曆行程",
+            "備註": `行程:${title}, 備註:${note}`
+          }]
+        })
+      }).catch(err => console.log(err));
+
       document.getElementById('cal-title').value = '';
       document.getElementById('cal-note').value = '';
-      alert("成功新增看診行程！");
+      alert("成功新增並同步看診行程！");
       loadUserData();
     }
 
@@ -742,32 +771,74 @@
       loadUserData();
     }
 
-    // 同步雲端與讀取資料 (防止無紀錄狀態)
+    // 💡 核心全功能雲端同步：從 SheetDB 自動抓取血壓、疼痛、用藥與行事曆
     async function loadUserData() {
       try {
         const res = await fetch(SHEETDB_API_URL);
         const rows = await res.json();
         if (Array.isArray(rows)) {
-          const userRows = rows.filter(r => r["長輩"] === currentActiveUser && r["時段"] !== "疼痛紀錄");
+          const userRows = rows.filter(r => r["長輩"] === currentActiveUser);
+          
           if (userRows.length > 0) {
-            const cloudBp = userRows.map((r, idx) => ({
+            // 1. 同步血壓
+            const cloudBp = userRows.filter(r => r["時段"] === "早上" || r["時段"] === "晚上" || r["時段"] === "血壓紀錄").map((r, idx) => ({
               id: idx + 1000,
               date: r["時間"] ? r["時間"].split(' ')[0] : '',
               time: r["時間"] ? r["時間"].split(' ')[1] : '',
-              slot: r["時段"] || '早上',
+              slot: (r["時段"] === "早上" || r["時段"] === "晚上") ? r["時段"] : '早上',
               sys: parseInt(r["收縮壓"]) || 120,
               dia: parseInt(r["舒張壓"]) || 80,
               pulse: parseInt(r["脈搏"]) || 72
             })).reverse();
-            let localBp = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
-            if (localBp.length === 0) {
-              localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
-            }
+            if (cloudBp.length > 0) localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
+
+            // 2. 同步疼痛紀錄
+            const cloudPain = userRows.filter(r => r["時段"] === "疼痛紀錄").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              return {
+                id: idx + 2000,
+                date: r["時間"] ? r["時間"].split(' ')[0] : '',
+                time: r["時間"] ? r["時間"].split(' ')[1] : '',
+                part: noteStr.match(/部位:([^,]+)/)?.[1] || '頭部',
+                score: noteStr.match(/分數:(\d+)/)?.[1] || '1',
+                type: noteStr.match(/\((.*?)\)/)?.[1] || '抽痛',
+                freq: noteStr.match(/頻率:([^,]+)/)?.[1] || '偶爾發生',
+                relief: noteStr.match(/改善:(.+)/)?.[1] || '尚未服藥'
+              };
+            }).reverse();
+            if (cloudPain.length > 0) localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(cloudPain));
+
+            // 3. 同步用藥提醒
+            const cloudMeds = userRows.filter(r => r["時段"] === "用藥紀錄").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              return {
+                id: idx + 3000,
+                name: noteStr.match(/藥名:([^,]+)/)?.[1] || '常備藥',
+                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '早上吃',
+                note: noteStr.match(/備註:(.+)/)?.[1] || '',
+                photo: ''
+              };
+            });
+            if (cloudMeds.length > 0) localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(cloudMeds));
+
+            // 4. 同步看診行事曆
+            const cloudCal = userRows.filter(r => r["時段"] === "行事曆行程").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              const dt = r["時間"] || "";
+              return {
+                id: idx + 4000,
+                title: noteStr.match(/行程:([^,]+)/)?.[1] || '回診行程',
+                date: dt.split(' ')[0] || '',
+                time: dt.split(' ')[1] || '',
+                note: noteStr.match(/備註:(.+)/)?.[1] || ''
+              };
+            });
+            if (cloudCal.length > 0) localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(cloudCal));
           }
         }
-      } catch(e) { console.log("Cloud fetch fallback to local"); }
+      } catch(e) { console.log("Cloud sync fallback to local storage"); }
 
-      // 1. 載入血壓紀錄清單
+      // 渲染血壓紀錄
       const bpRecords = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
       const bpList = document.getElementById('bp-history-list');
       bpList.innerHTML = bpRecords.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無血壓紀錄</div>' : bpRecords.map(r => `
@@ -782,7 +853,7 @@
         </div>
       `).join('');
 
-      // 2. 載入疼痛歷史紀錄清單
+      // 渲染疼痛紀錄
       const pains = JSON.parse(localStorage.getItem(`pain_${currentActiveUser}`)) || [];
       const painList = document.getElementById('pain-history-list');
       painList.innerHTML = pains.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無疼痛紀錄</div>' : pains.map(p => `
@@ -796,7 +867,7 @@
         </div>
       `).join('');
 
-      // 3. 載入用藥提醒清單（含照片）
+      // 渲染用藥提醒
       const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
       const medList = document.getElementById('med-list');
       medList.innerHTML = meds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無用藥提醒</div>' : meds.map(m => `
@@ -811,13 +882,10 @@
         </div>
       `).join('');
 
-      // 4. 載入月份網格行事曆
       renderMonthlyCalendar();
-
       updateChart(bpRecords);
     }
 
-    // 渲染月份網格與當月行程
     function renderMonthlyCalendar() {
       const year = viewDate.getFullYear();
       const month = viewDate.getMonth();
