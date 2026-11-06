@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>長輩健康守護與行事曆 - SheetDB 直連版</title>
+  <title>長輩健康守護與行事曆 - 雲端直連版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -44,7 +44,7 @@
 </head>
 <body class="pb-28">
 
-  <!-- 頂部列 -->
+  <!-- 頂部導覽列 -->
   <header class="bg-emerald-700 text-white p-4 sticky top-0 z-50 shadow-md">
     <div class="max-w-md mx-auto flex flex-col gap-2">
       <div class="flex justify-between items-center">
@@ -54,7 +54,7 @@
         </div>
         <div class="bg-emerald-800 text-emerald-200 text-xs px-3 py-1 rounded-full flex items-center gap-1.5 font-bold border border-emerald-600">
           <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
-          <span>🟢 SheetDB 雲端直連</span>
+          <span>🟢 雲端直連同步中</span>
         </div>
       </div>
 
@@ -85,7 +85,7 @@
         <i class="fa-solid fa-pills block text-base mb-0.5"></i>用藥
       </button>
       <button id="tab-cal-btn" onclick="switchTab('cal')" class="py-2.5 font-black text-sm rounded-xl text-emerald-700">
-        <i class="fa-solid id fa-calendar-days block text-base mb-0.5"></i>行事曆
+        <i class="fa-solid fa-calendar-days block text-base mb-0.5"></i>行事曆
       </button>
     </div>
 
@@ -206,7 +206,7 @@
       </div>
     </section>
 
-    <!-- 2. 疼痛紀錄頁籤 (完整抓回所有欄位與頭頂部位) -->
+    <!-- 2. 疼痛紀錄頁籤 -->
     <section id="tab-pain" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
@@ -240,12 +240,12 @@
               <button onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
             </div>
             <div class="grid grid-cols-2 gap-2 mb-2">
-              <button onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側太陽穴</button>
-              <button onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側太陽穴</button>
+              <button onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側太陽穴</button>
+              <button onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側太陽穴</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側前額</button>
-              <button onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側前額</button>
+              <button onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側前額</button>
+              <button onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側前額</button>
             </div>
           </div>
         </div>
@@ -313,11 +313,11 @@
       </div>
     </section>
 
-    <!-- 3. 用藥提醒頁籤 -->
+    <!-- 3. 用藥提醒頁籤 (新增三餐飯後與照片備註) -->
     <section id="tab-med" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>家人手動新增用藥提醒</span>
+          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>手動新增用藥提醒 (含照片)</span>
         </h2>
         <div class="flex flex-col gap-3 mb-4">
           <div>
@@ -325,8 +325,23 @@
             <input type="text" id="med-name" placeholder="例：脈優 (降血壓藥)" class="w-full border-2 border-slate-200 rounded-xl p-3 text-base font-bold focus:outline-none">
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">服用時段與注意事項：</label>
-            <input type="text" id="med-note" placeholder="例：早上飯後服用，配溫開水" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm focus:outline-none">
+            <label class="block text-xs font-bold text-gray-600 mb-1">服用時段：</label>
+            <select id="med-time" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
+              <option value="早上吃 (早餐後)">早上吃 (早餐後)</option>
+              <option value="中午吃 (午餐後)">中午吃 (午餐後)</option>
+              <option value="晚上吃 (晚餐後)">晚上吃 (晚餐後)</option>
+              <option value="三餐飯後">💊 三餐飯後 (早午晚)</option>
+              <option value="睡前吃">睡前吃</option>
+              <option value="需要時吃 (疼痛時)">需要時吃 (疼痛時)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">注意事項：</label>
+            <input type="text" id="med-note" placeholder="例：配溫開水，勿配葡萄柚汁" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">藥物照片 (選填)：</label>
+            <input type="file" id="med-photo-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700">
           </div>
         </div>
         <button onclick="addMedication()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3 rounded-2xl shadow">
@@ -340,7 +355,7 @@
       </div>
     </section>
 
-    <!-- 4. 家人共同看診行事曆頁籤 -->
+    <!-- 4. 家人共同看診行事曆頁籤 (月份網格顯示樣式) -->
     <section id="tab-cal" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
@@ -353,7 +368,7 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">看診日期：</label>
+              <label class="block text-[11px] font-bold text-gray-600 mb-0.5">日期：</label>
               <input type="date" id="cal-date" class="w-full border-2 border-slate-200 rounded-xl p-2 font-bold text-sm focus:outline-none">
             </div>
             <div>
@@ -363,7 +378,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">備註提醒：</label>
-            <input type="text" id="cal-note" placeholder="例：記得帶健保卡、血壓紀錄本、空腹" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm focus:outline-none">
+            <input type="text" id="cal-note" placeholder="例：帶健保卡、血壓紀錄本" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm focus:outline-none">
           </div>
         </div>
         <button onclick="addCalendarEvent()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3 rounded-2xl shadow">
@@ -371,16 +386,30 @@
         </button>
       </div>
 
+      <!-- 月份網格檢視容器 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
-        <h2 class="text-xl font-black text-emerald-900 mb-3">共用看診行事曆清單</h2>
-        <div id="calendar-list" class="flex flex-col gap-3"></div>
+        <div class="flex justify-between items-center mb-4">
+          <button onclick="changeMonth(-1)" class="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl font-bold text-sm"><i class="fa-solid fa-chevron-left"></i> 上個月</button>
+          <h3 id="cal-month-title" class="font-black text-lg text-emerald-900">2026年 11月</h3>
+          <button onclick="changeMonth(1)" class="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl font-bold text-sm">下個月 <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <!-- 星期表頭 -->
+        <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 mb-2">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <!-- 月曆網格 -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 mb-4"></div>
+
+        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1 text-sm">當月行程清單</h3>
+        <div id="calendar-list" class="flex flex-col gap-2.5"></div>
       </div>
     </section>
 
   </main>
 
   <script>
-    // SheetDB API 網址
+    // 您的 SheetDB API 網址
     const SHEETDB_API_URL = "https://sheetdb.io/api/v1/rd7b2ievscqzs";
 
     const DEFAULT_USERS = ['王爺爺', '李奶奶'];
@@ -388,6 +417,9 @@
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
     let selectedBodyZone = '左側-頭頂/頂葉';
+    
+    // 行事曆當前檢視年月
+    let viewDate = new Date();
 
     window.onload = function() {
       initDefaultDateTime();
@@ -559,7 +591,6 @@
       loadUserData();
     }
 
-    // 刪除血壓紀錄
     function deleteBPRecord(id) {
       if (confirm("確定要刪除這筆血壓紀錄嗎？")) {
         let records = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
@@ -635,17 +666,48 @@
       loadUserData();
     }
 
+    // 用藥提醒支援圖片
     function addMedication() {
       const name = document.getElementById('med-name').value.trim();
+      const time = document.getElementById('med-time').value;
       const note = document.getElementById('med-note').value.trim();
-      if (!name) { alert("請輸入藥物名稱！"); return; }
+      const photoInput = document.getElementById('med-photo-input');
       
+      if (!name) { alert("請輸入藥物名稱！"); return; }
+
+      if (photoInput.files && photoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveMedObj(name, time, note, e.target.result);
+        };
+        reader.readAsDataURL(photoInput.files[0]);
+      } else {
+        saveMedObj(name, time, note, '');
+      }
+    }
+
+    function saveMedObj(name, time, note, photo) {
       let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      meds.push({ name, note });
+      meds.push({ id: Date.now(), name, time, note, photo });
       localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
+      
       document.getElementById('med-name').value = '';
       document.getElementById('med-note').value = '';
+      document.getElementById('med-photo-input').value = '';
       alert("成功新增用藥提醒！");
+      loadUserData();
+    }
+
+    function deleteMedication(id) {
+      let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
+      meds = meds.filter(m => m.id !== id);
+      localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
+      loadUserData();
+    }
+
+    // 行事曆月份切換
+    function changeMonth(delta) {
+      viewDate.setMonth(viewDate.getMonth() + delta);
       loadUserData();
     }
 
@@ -659,7 +721,6 @@
 
       let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
       events.push({ id: Date.now(), title, date, time, note });
-      // 依日期排序
       events.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
       localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(events));
 
@@ -676,8 +737,35 @@
       loadUserData();
     }
 
-    function loadUserData() {
-      // 1. 血壓紀錄清單（大字、長輩友善、附帶刪除）
+    // 同步雲端與讀取資料 (修復無紀錄狀態)
+    async function loadUserData() {
+      // 嘗試從 SheetDB 雲端讀取紀錄以防本地快取遺失
+      try {
+        const res = await fetch(SHEETDB_API_URL);
+        const rows = await res.json();
+        if (Array.isArray(rows)) {
+          const userRows = rows.filter(r => r["長輩"] === currentActiveUser && r["時段"] !== "疼痛紀錄");
+          // 若雲端有資料且本地無資料，可自動還原到本地
+          if (userRows.length > 0) {
+            const cloudBp = userRows.map((r, idx) => ({
+              id: idx + 1000,
+              date: r["時間"] ? r["時間"].split(' ')[0] : '',
+              time: r["時間"] ? r["時間"].split(' ')[1] : '',
+              slot: r["時段"] || '早上',
+              sys: parseInt(r["收縮壓"]) || 120,
+              dia: parseInt(r["舒張壓"]) || 80,
+              pulse: parseInt(r["脈搏"]) || 72
+            })).reverse();
+            // 合併本地與雲端
+            let localBp = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
+            if (localBp.length === 0) {
+              localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
+            }
+          }
+        }
+      } catch(e) { console.log("Cloud fetch fallback to local"); }
+
+      // 1. 載入血壓紀錄清單
       const bpRecords = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
       const bpList = document.getElementById('bp-history-list');
       bpList.innerHTML = bpRecords.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無血壓紀錄</div>' : bpRecords.map(r => `
@@ -692,7 +780,7 @@
         </div>
       `).join('');
 
-      // 2. 疼痛歷史紀錄清單
+      // 2. 載入疼痛歷史紀錄清單
       const pains = JSON.parse(localStorage.getItem(`pain_${currentActiveUser}`)) || [];
       const painList = document.getElementById('pain-history-list');
       painList.innerHTML = pains.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無疼痛紀錄</div>' : pains.map(p => `
@@ -706,20 +794,67 @@
         </div>
       `).join('');
 
-      // 3. 用藥提醒清單
+      // 3. 載入用藥提醒清單（含照片）
       const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
       const medList = document.getElementById('med-list');
       medList.innerHTML = meds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無用藥提醒</div>' : meds.map(m => `
-        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-          <div class="font-black text-emerald-950 text-base">${m.name}</div>
-          <div class="text-xs text-emerald-700 font-bold mt-0.5">${m.note || '遵照醫囑服用'}</div>
+        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-3">
+          <div class="flex-1">
+            <span class="bg-emerald-600 text-white font-bold text-[11px] px-2 py-0.5 rounded-full">${m.time}</span>
+            <div class="font-black text-emerald-950 text-base mt-1">${m.name}</div>
+            <div class="text-xs text-emerald-700 font-bold mt-0.5">${m.note || '遵照醫囑服用'}</div>
+          </div>
+          ${m.photo ? `<img src="${m.photo}" class="w-16 h-16 object-cover rounded-xl border-2 border-emerald-300 shadow-sm">` : ''}
+          <button onclick="deleteMedication(${m.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200 ml-1">刪除</button>
         </div>
       `).join('');
 
-      // 4. 看診行事曆清單
-      const events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
+      // 4. 載入月份網格行事曆
+      renderMonthlyCalendar();
+
+      updateChart(bpRecords);
+    }
+
+    // 渲染月份網格與當月行程
+    function renderMonthlyCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      document.getElementById('cal-month-title.innerText` || (document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`));
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
+
+      let gridHtml = '';
+      // 空白填補月初
+      for (let i = 0; i < firstDayIndex; i++) {
+        gridHtml += `<div class="h-14 bg-slate-50/50 rounded-lg"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateStr = `${year}-${mm}-${dd}`;
+        const hasEvent = events.some(e => e.date === dateStr);
+
+        gridHtml += `
+          <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
+            <span class="text-xs font-black text-slate-700">${day}</span>
+            ${hasEvent ? '<span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse mb-1"></span>' : ''}
+          </div>
+        `;
+      }
+      document.getElementById('calendar-grid').innerHTML = gridHtml;
+
+      // 當月行程清單過濾
+      const monthEvents = events.filter(e => {
+        const [eY, eM] = e.date.split('-');
+        return parseInt(eY) === year && parseInt(eM) === (month + 1);
+      });
+
       const calList = document.getElementById('calendar-list');
-      calList.innerHTML = events.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無看診與健康行程</div>' : events.map(e => `
+      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => `
         <div class="p-3.5 bg-indigo-50 rounded-2xl border border-indigo-200 flex justify-between items-start">
           <div>
             <div class="text-xs font-bold text-indigo-700"><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</div>
@@ -729,8 +864,6 @@
           <button onclick="deleteCalendarEvent(${e.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
         </div>
       `).join('');
-
-      updateChart(bpRecords);
     }
 
     let bpChart;
