@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>居家血壓與健康紀錄 - 雲端即時同步版</title>
+  <title>居家血壓與健康紀錄 - Google 試算表雲端同步版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -12,9 +12,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <!-- Firebase SDK (Compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: 'Noto Sans TC', sans-serif;
@@ -57,7 +54,7 @@
         </div>
         <div id="sync-status" class="bg-emerald-800 text-emerald-200 text-xs px-3 py-1 rounded-full flex items-center gap-1.5 font-bold border border-emerald-600">
           <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
-          <span>🟢 雲端即時同步中</span>
+          <span>🟢 Google 試算表同步中</span>
         </div>
       </div>
 
@@ -194,7 +191,7 @@
         </div>
 
         <button onclick="saveBPRecord()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xl py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> 儲存並雲端同步
+          <i class="fa-solid fa-cloud-arrow-up"></i> 儲存並同步至 Google 試算表
         </button>
       </div>
 
@@ -299,9 +296,14 @@
         <div id="body-view-front" class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200">
           <div class="text-center font-black text-slate-700 text-sm mb-3">【正面】請點選左側或右側部位：</div>
 
-          <!-- 頭部 -->
+          <!-- 頭部 (新增：頭頂部位) -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
-            <div class="text-xs font-black text-amber-700 mb-2 text-center"><i class="fa-solid fa-head-side-virus mr-1"></i>頭部與顏面 (正面/側邊)</div>
+            <div class="text-xs font-black text-amber-700 mb-2 text-center"><i class="fa-solid fa-head-side-virus mr-1"></i>頭部與顏面 (頭頂/額/側頭)</div>
+            <!-- 新增：頭頂部位 -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <button onclick="selectZone('左側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👈 左側頭頂</button>
+              <button onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
+            </div>
             <div class="grid grid-cols-2 gap-2 mb-2">
               <button onclick="selectZone('左側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側太陽穴(耳旁)</button>
               <button onclick="selectZone('右側-太陽穴/側頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側太陽穴(耳旁)</button>
@@ -396,7 +398,7 @@
         </div>
 
         <div class="text-center mt-3 font-black text-red-600 text-base bg-red-50 p-2 rounded-xl border border-red-200">
-          已選擇部位：<span id="selected-zone-text" class="text-lg underline">左側-前額/額葉</span>
+          已選擇部位：<span id="selected-zone-text" class="text-lg underline">左側-頭頂/頂葉</span>
         </div>
 
         <div class="my-5">
@@ -467,40 +469,30 @@
   <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 shadow-lg">
     <div class="max-w-md mx-auto flex items-center justify-between gap-3">
       <div class="text-xs text-slate-500">
-        <span class="font-bold text-emerald-800">家人遠端模式</span><br>雲端即時同步
+        <span class="font-bold text-emerald-800">試算表同步模式</span><br>長輩紀錄直達 Google 試算表
       </div>
-      <button onclick="shareLink()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-1.5">
-        <i class="fa-solid fa-share-nodes"></i> 分享血壓查看連結給家人
+      <button onclick="shareSpreadsheet()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-1.5">
+        <i class="fa-solid fa-share-nodes"></i> 分享查看連結
       </button>
     </div>
   </footer>
 
   <script>
-    // Firebase 雲端資料庫設定 (預設公開測試節點，確保所有家人開啟網址即同步)
-    const firebaseConfig = {
-      databaseURL: "https://bp-health-app-default-rtdb.firebaseio.com"
-    };
-    
-    let db = null;
-    try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
-    } catch(e) {
-      console.log("Firebase init fallback to local", e);
-    }
+    // 您的 Google Apps Script Web App 部署網址
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzwIhHPp2ngw1YE2Z5Je1p-hImitkavC0-R2WZa2CQ2I6EGE1xqOsgAAujHgzcKUs92Pw/exec3";
 
     const DEFAULT_USERS = ['王爺爺', '李奶奶'];
     let currentActiveUser = '王爺爺';
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
-    let selectedBodyZone = '左側-前額/額葉';
+    let selectedBodyZone = '左側-頭頂/頂葉';
     let tempBPPhoto = '';
     let tempMedPhoto = '';
 
     window.onload = function() {
       initDefaultDateTime();
       initUserSelect();
-      setupCloudSync();
+      loadUserData();
       initChart();
     };
 
@@ -531,7 +523,6 @@
     function switchUser(userName) {
       currentActiveUser = userName;
       loadUserData();
-      setupCloudSync();
     }
 
     function promptAddUser() {
@@ -676,37 +667,6 @@
       }
     }
 
-    // 雲端同步設定與即時監聽
-    function setupCloudSync() {
-      if (!db) {
-        loadUserData();
-        return;
-      }
-      
-      const safeUserName = currentActiveUser.replace(/[.#$\/\[\]]/g, '_');
-      
-      // 監聽血壓雲端資料
-      db.ref(`users/${safeUserName}/bp`).on('value', (snapshot) => {
-        const data = snapshot.val() || [];
-        localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(data));
-        loadUserData();
-      });
-
-      // 監聽用藥雲端資料
-      db.ref(`users/${safeUserName}/med`).on('value', (snapshot) => {
-        const data = snapshot.val() || [];
-        localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(data));
-        loadUserData();
-      });
-
-      // 監聽疼痛雲端資料
-      db.ref(`users/${safeUserName}/pain`).on('value', (snapshot) => {
-        const data = snapshot.val() || [];
-        localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(data));
-        loadUserData();
-      });
-    }
-
     function saveBPRecord() {
       const sys = parseInt(document.getElementById('val-sys').innerText);
       const dia = parseInt(document.getElementById('val-dia').innerText);
@@ -728,15 +688,25 @@
       records.unshift(record);
       localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(records));
 
-      // 同步到雲端
-      if (db) {
-        const safeUserName = currentActiveUser.replace(/[.#$\/\[\]]/g, '_');
-        db.ref(`users/${safeUserName}/bp`).set(records);
-      }
+      const payload = {
+        user: currentActiveUser,
+        sys: sys,
+        dia: dia,
+        pulse: pulse,
+        slot: `${record.date} ${record.time} (${record.slot})`,
+        note: `血壓紀錄`
+      };
+
+      fetch(SHEET_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      }).catch(err => console.log("Google Sheets sync note:", err));
 
       tempBPPhoto = '';
       document.getElementById('photo-preview').classList.add('hidden');
-      alert(`已成功儲存 ${currentActiveUser} 的血壓紀錄並同步至雲端！`);
+      alert(`已成功儲存 ${currentActiveUser} 的血壓紀錄並同步至 Google 試算表！`);
       loadUserData();
     }
 
@@ -757,16 +727,11 @@
       meds.push(med);
       localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
 
-      if (db) {
-        const safeUserName = currentActiveUser.replace(/[.#$\/\[\]]/g, '_');
-        db.ref(`users/${safeUserName}/med`).set(meds);
-      }
-
       document.getElementById('med-name').value = '';
       document.getElementById('med-note').value = '';
       tempMedPhoto = '';
       document.getElementById('med-photo-preview').classList.add('hidden');
-      alert("成功新增用藥提醒並同步至雲端！");
+      alert("成功新增用藥提醒！");
       loadUserData();
     }
 
@@ -824,12 +789,23 @@
       pains.unshift(painRec);
       localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(pains));
 
-      if (db) {
-        const safeUserName = currentActiveUser.replace(/[.#$\/\[\]]/g, '_');
-        db.ref(`users/${safeUserName}/pain`).set(pains);
-      }
+      const payload = {
+        user: currentActiveUser,
+        sys: 0,
+        dia: 0,
+        pulse: 0,
+        slot: `${painRec.date} ${painRec.time} 疼痛`,
+        note: `部位:${painRec.part}, 疼痛:${painRec.score}分(${painRec.type}), 改善:${painRec.relief}`
+      };
 
-      alert("已儲存疼痛評估與改善紀錄並同步至雲端！");
+      fetch(SHEET_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      }).catch(err => console.log("Google Sheets sync note:", err));
+
+      alert("已儲存疼痛評估與改善紀錄並同步至 Google 試算表！");
       loadUserData();
     }
 
@@ -927,12 +903,12 @@
       alert(reportText);
     }
 
-    function shareLink() {
+    function shareSpreadsheet() {
       if (navigator.share) {
-        navigator.share({ title: '長輩血壓健康紀錄', url: window.location.href });
+        navigator.share({ title: '長輩健康紀錄', url: window.location.href });
       } else {
         navigator.clipboard.writeText(window.location.href);
-        alert("已複製網頁連結！可以直接貼上傳給家人！家人點開即可看到最新同步狀況！");
+        alert("已複製網頁連結！您可以將 Google 試算表連結直接釘選或分享給家人！");
       }
     }
   </script>
