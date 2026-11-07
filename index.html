@@ -434,10 +434,19 @@
           <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程</span>
         </h2>
         
-        <!-- 自訂行事曆顏色選擇器 -->
-        <div class="flex items-center justify-between mb-4 bg-indigo-50 p-3 rounded-2xl border border-indigo-200">
-          <label class="text-xs font-bold text-indigo-900">🎨 行事曆標記顏色：</label>
-          <input type="color" id="cal-theme-color" value="#4f46e5" onchange="changeCalendarColor(this.value)" class="w-12 h-9 rounded-xl cursor-pointer border-0 shadow-sm">
+        <!-- 本次記事顏色選擇 -->
+        <div class="mb-4 bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200">
+          <label class="block text-xs font-bold text-indigo-900 mb-2">🎨 選擇此筆記事標記顏色：</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="selectEventColor('#ef4444')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white shadow color-btn" data-color="#ef4444"></button>
+            <button type="button" onclick="selectEventColor('#f97316')" class="w-7 h-7 rounded-full bg-orange-500 border-2 border-white shadow color-btn" data-color="#f97316"></button>
+            <button type="button" onclick="selectEventColor('#eab308')" class="w-7 h-7 rounded-full bg-yellow-500 border-2 border-white shadow color-btn" data-color="#eab308"></button>
+            <button type="button" onclick="selectEventColor('#10b981')" class="w-7 h-7 rounded-full bg-emerald-500 border-2 border-white shadow color-btn" data-color="#10b981"></button>
+            <button type="button" onclick="selectEventColor('#3b82f6')" class="w-7 h-7 rounded-full bg-blue-500 border-2 border-white shadow color-btn" data-color="#3b82f6"></button>
+            <button type="button" onclick="selectEventColor('#8b5cf6')" class="w-7 h-7 rounded-full bg-purple-500 border-2 border-white shadow color-btn" data-color="#8b5cf6"></button>
+            <button type="button" onclick="selectEventColor('#ec4899')" class="w-7 h-7 rounded-full bg-pink-500 border-2 border-white shadow color-btn" data-color="#ec4899"></button>
+            <input type="color" id="cal-event-color" value="#3b82f6" class="w-9 h-8 rounded-xl cursor-pointer border-0 shadow ml-auto">
+          </div>
         </div>
 
         <div class="flex flex-col gap-3 mb-4">
@@ -1034,7 +1043,7 @@
 
       const dueMeds = meds.filter(m => {
         if (!m.time) return false;
-        return activeSlots.some(slot => m.time.includes(slot)) || m.time.includes('⚡ 需要時');
+        return activeSlots.some(slot => m.time.includes(slot));
       });
 
       if (dueMeds.length === 0) {
@@ -1079,17 +1088,24 @@
       }
     }
 
+    let selectedCalColor = '#3b82f6';
+    function selectEventColor(color) {
+      selectedCalColor = color;
+      document.getElementById('cal-event-color').value = color;
+    }
+
     function addCalendarEvent() {
       const title = document.getElementById('cal-title').value.trim();
       const date = document.getElementById('cal-date').value;
       const time = document.getElementById('cal-time').value;
       const note = document.getElementById('cal-note').value.trim();
+      const color = document.getElementById('cal-event-color').value || selectedCalColor;
       const timeStampStr = `${date} ${time || '00:00'}`;
 
       if (!title || !date) { alert("請填寫行程名稱與日期！"); return; }
 
       let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
-      const newEvt = { id: Date.now(), title, date, time, note };
+      const newEvt = { id: Date.now(), title, date, time, note, color };
       events.push(newEvt);
       events.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
       localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(events));
@@ -1103,7 +1119,7 @@
             "長輩": currentActiveUser,
             "收縮壓": 0, "舒張壓": 0, "脈搏": 0,
             "時段": "行事曆行程",
-            "備註": `行程:${title}, 備註:${note}`
+            "備註": `行程:${title}, 顏色:${color}, 備註:${note}`
           }]
         })
       }).catch(err => console.log(err));
@@ -1189,6 +1205,7 @@
               return {
                 id: idx + 4000,
                 title: noteStr.match(/行程:([^,]+)/)?.[1] || '回診行程',
+                color: noteStr.match(/顏色:([^,]+)/)?.[1] || '#3b82f6',
                 date: dt.split(' ')[0] || '',
                 time: dt.split(' ')[1] || '',
                 note: noteStr.match(/備註:(.+)/)?.[1] || ''
@@ -1272,12 +1289,17 @@
         const mm = String(month + 1).padStart(2, '0');
         const dd = String(day).padStart(2, '0');
         const dateStr = `${year}-${mm}-${dd}`;
-        const hasEvent = events.some(e => e.date === dateStr);
+        const dayEvents = events.filter(e => e.date === dateStr);
+
+        let dotsHtml = '';
+        if (dayEvents.length > 0) {
+          dotsHtml = `<div class="flex gap-1 flex-wrap justify-center mb-1">` + dayEvents.map(e => `<span class="w-2.5 h-2.5 rounded-full" style="background-color: ${e.color || '#3b82f6'};"></span>`).join('') + `</div>`;
+        }
 
         gridHtml += `
           <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
             <span class="text-xs font-black text-slate-700">${day}</span>
-            ${hasEvent ? `<span class="w-2.5 h-2.5 rounded-full animate-pulse mb-1" style="background-color: ${currentCalendarColor};"></span>` : ''}
+            ${dotsHtml}
           </div>
         `;
       }
@@ -1289,16 +1311,21 @@
       });
 
       const calList = document.getElementById('calendar-list');
-      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => `
-        <div class="p-3.5 rounded-2xl border flex justify-between items-start" style="background-color: ${currentCalendarColor}10; border-color: ${currentCalendarColor}40;">
+      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => {
+        const itemColor = e.color || '#3b82f6';
+        return `
+        <div class="p-3.5 rounded-2xl border-l-8 flex justify-between items-start bg-slate-50 shadow-sm border" style="border-left-color: ${itemColor};">
           <div>
-            <div class="text-xs font-bold" style="color: ${currentCalendarColor};"><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</div>
+            <div class="text-xs font-bold flex items-center gap-1 text-slate-600">
+              <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${itemColor};"></span>
+              <span><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</span>
+            </div>
             <div class="text-base font-black text-slate-900 mt-0.5">${e.title}</div>
             <div class="text-xs text-slate-600 mt-1 font-bold">備註：${e.note || '無'}</div>
           </div>
           <button onclick="deleteCalendarEvent(${e.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     let bpChart;
