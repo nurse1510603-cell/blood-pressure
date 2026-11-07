@@ -66,6 +66,9 @@
         <span class="text-sm font-bold whitespace-nowrap">目前長輩：</span>
         <select id="user-select" onchange="switchUser(this.value)" class="bg-white text-emerald-950 font-black text-lg rounded-lg px-3 py-1 flex-1 focus:outline-none">
         </select>
+        <button type="button" onclick="openUserManageModal()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-200 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-emerald-600 cursor-pointer" title="排序與管理長輩">
+          <i class="fa-solid fa-arrow-up-wide-short mr-1"></i>排序
+        </button>
         <button type="button" onclick="promptAddUser()" class="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white px-3.5 py-1.5 text-sm font-bold rounded-lg shadow cursor-pointer">
           <i class="fa-solid fa-user-plus mr-1"></i>新增
         </button>
@@ -538,11 +541,82 @@
       document.getElementById('cal-time').value = "09:00";
     }
 
-    function initUserSelect() {
+    async function initUserSelect() {
       let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
+      
+      // 自動從雲端抓取所有出現過的長輩名稱 (如 '媽咪')
+      try {
+        const res = await fetch(SHEETDB_API_URL);
+        const rows = await res.json();
+        if (Array.isArray(rows)) {
+          rows.forEach(r => {
+            const u = r["長輩"];
+            if (u && !users.includes(u)) {
+              users.push(u);
+            }
+          });
+          localStorage.setItem('bp_user_list', JSON.stringify(users));
+        }
+      } catch(e) {}
+
       const select = document.getElementById('user-select');
       select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
+      if (!users.includes(currentActiveUser)) {
+        currentActiveUser = users[0] || '王爺爺';
+      }
       select.value = currentActiveUser;
+    }
+
+    function openUserManageModal() {
+      renderUserManageList();
+      document.getElementById('user-manage-modal').classList.remove('hidden');
+    }
+
+    function closeUserManageModal() {
+      document.getElementById('user-manage-modal').classList.add('hidden');
+      initUserSelect();
+    }
+
+    function renderUserManageList() {
+      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
+      const container = document.getElementById('user-manage-list');
+      container.innerHTML = users.map((u, index) => `
+        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border">
+          <span class="font-black text-slate-800 text-sm">${u}</span>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="moveUser(${index}, -1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}">⬆️</button>
+            <button type="button" onclick="moveUser(${index}, 1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === users.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">⬇️</button>
+            <button type="button" onclick="removeUserItem('${u}')" class="bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded-lg text-xs font-bold ml-1">刪除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function moveUser(index, direction) {
+      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= users.length) return;
+      const temp = users[index];
+      users[index] = users[targetIndex];
+      users[targetIndex] = temp;
+      localStorage.setItem('bp_user_list', JSON.stringify(users));
+      renderUserManageList();
+      initUserSelect();
+    }
+
+    function removeUserItem(userName) {
+      if (confirm(`確定要移除「${userName}」的本地名單嗎？`)) {
+        let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
+        users = users.filter(u => u !== userName);
+        if (users.length === 0) users = ['王爺爺'];
+        localStorage.setItem('bp_user_list', JSON.stringify(users));
+        if (currentActiveUser === userName) {
+          currentActiveUser = users[0];
+        }
+        renderUserManageList();
+        initUserSelect();
+        loadUserData();
+      }
     }
 
     function switchUser(userName) {
@@ -1248,5 +1322,22 @@
       bpChart.update();
     }
   </script>
+
+  <!-- 長輩管理與排序 Modal -->
+  <div id="user-manage-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-users-gear mr-1"></i> 長輩名單排序與管理</h3>
+        <button onclick="closeUserManageModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+      <div id="user-manage-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+        <!-- 動態列出長輩與上下移動按鈕 -->
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeUserManageModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow">完成儲存</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
