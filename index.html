@@ -13,6 +13,9 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
+    html {
+      touch-action: manipulation; /* 防止雙擊畫面放大 */
+    }
     body {
       font-family: 'Noto Sans TC', sans-serif;
       background-color: #f0fdf4;
@@ -211,7 +214,7 @@
       </div>
     </section>
 
-    <!-- 2. 疼痛紀錄頁籤 -->
+    <!-- 2. 疼痛紀錄頁籤 (完整部位與頻率、改善狀況) -->
     <section id="tab-pain" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
@@ -235,28 +238,61 @@
           </div>
         </div>
 
-        <!-- 點選部位 (含頭頂) -->
-        <div class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200 mb-4">
+        <!-- 點選部位 (完整擴增部位清單) -->
+        <div class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200 mb-4 max-h-72 overflow-y-auto">
           <div class="text-center font-black text-slate-700 text-sm mb-3">1. 選擇不適部位：</div>
+          
+          <!-- 頭部 -->
           <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
-            <div class="text-xs font-black text-amber-700 mb-2 text-center">頭部與顏面 (含頭頂)</div>
-            <div class="grid grid-cols-2 gap-2 mb-2">
-              <button type="button" onclick="selectZone('左側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black selected">👈 左側頭頂</button>
-              <button type="button" onclick="selectZone('右側-頭頂/頂葉')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs font-black">👉 右側頭頂</button>
+            <div class="text-xs font-black text-amber-700 mb-2 text-center">頭部與臉部</div>
+            <div class="grid grid-cols-2 gap-2 mb-1.5">
+              <button type="button" onclick="selectZone('左右頭部')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">左右頭部</button>
+              <button type="button" onclick="selectZone('頭頂')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black selected">頭頂</button>
             </div>
-            <div class="grid grid-cols-2 gap-2 mb-2">
-              <button type="button" onclick="selectZone('左側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側太陽穴</button>
-              <button type="button" onclick="selectZone('右側-太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側太陽穴</button>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="selectZone('額頭')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-1.5 rounded-xl text-xs font-black">額頭</button>
+              <button type="button" onclick="selectZone('太陽穴')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-1.5 rounded-xl text-xs font-black">太陽穴</button>
+              <button type="button" onclick="selectZone('眼睛')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-1.5 rounded-xl text-xs font-black">眼睛</button>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="selectZone('左側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👈 左側前額</button>
-              <button type="button" onclick="selectZone('右側-前額')" class="body-zone-btn bg-amber-50 border border-amber-300 text-amber-900 p-2 rounded-xl text-xs font-black">👉 右側前額</button>
+          </div>
+
+          <!-- 上肢 -->
+          <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
+            <div class="text-xs font-black text-blue-700 mb-2 text-center">上肢部位</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="selectZone('左右上臂')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-1.5 rounded-xl text-xs font-black">左右上臂</button>
+              <button type="button" onclick="selectZone('下臂')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-1.5 rounded-xl text-xs font-black">下臂</button>
+              <button type="button" onclick="selectZone('關節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-1.5 rounded-xl text-xs font-black">關節</button>
+              <button type="button" onclick="selectZone('指節')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-1.5 rounded-xl text-xs font-black">指節</button>
+              <button type="button" onclick="selectZone('手腕')" class="body-zone-btn bg-blue-50 border border-blue-300 text-blue-900 p-1.5 rounded-xl text-xs font-black">手腕</button>
+            </div>
+          </div>
+
+          <!-- 下肢 -->
+          <div class="mb-3 bg-white p-3 rounded-2xl border border-emerald-100">
+            <div class="text-xs font-black text-rose-700 mb-2 text-center">下肢部位</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="selectZone('左右大腿')" class="body-zone-btn bg-rose-50 border border-rose-300 text-rose-900 p-1.5 rounded-xl text-xs font-black">左右大腿</button>
+              <button type="button" onclick="selectZone('小腿')" class="body-zone-btn bg-rose-50 border border-rose-300 text-rose-900 p-1.5 rounded-xl text-xs font-black">小腿</button>
+              <button type="button" onclick="selectZone('膝蓋')" class="body-zone-btn bg-rose-50 border border-rose-300 text-rose-900 p-1.5 rounded-xl text-xs font-black">膝蓋</button>
+              <button type="button" onclick="selectZone('腳踝')" class="body-zone-btn bg-rose-50 border border-rose-300 text-rose-900 p-1.5 rounded-xl text-xs font-black">腳踝</button>
+              <button type="button" onclick="selectZone('足底')" class="body-zone-btn bg-rose-50 border border-rose-300 text-rose-900 p-1.5 rounded-xl text-xs font-black">足底</button>
+            </div>
+          </div>
+
+          <!-- 軀幹 -->
+          <div class="bg-white p-3 rounded-2xl border border-emerald-100">
+            <div class="text-xs font-black text-emerald-700 mb-2 text-center">軀幹與背部</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="selectZone('背部上背')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-1.5 rounded-xl text-xs font-black">背部上背</button>
+              <button type="button" onclick="selectZone('下背')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-1.5 rounded-xl text-xs font-black">下背</button>
+              <button type="button" onclick="selectZone('腰')" class="body-zone-btn bg-emerald-50 border border-emerald-300 text-emerald-900 p-1.5 rounded-xl text-xs font-black">腰</button>
             </div>
           </div>
         </div>
 
         <div class="text-center mb-4 font-black text-red-600 text-base bg-red-50 p-2 rounded-xl border border-red-200">
-          已選部位：<span id="selected-zone-text" class="text-lg underline">左側-頭頂/頂葉</span>
+          已選部位：<span id="selected-zone-text" class="text-lg underline">頭頂</span>
         </div>
 
         <!-- 疼痛程度 1-10分 -->
@@ -269,10 +305,10 @@
           <input type="range" id="pain-score" min="1" max="10" value="1" oninput="updatePainDisplay(this.value)" class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
         </div>
 
-        <!-- 10種疼痛形式與頻率 -->
+        <!-- 疼痛形式與頻率、改善狀況 -->
         <div class="grid grid-cols-1 gap-3 mb-4">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">3. 疼痛形式 (10 種選項)：</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1">3. 疼痛形式：</label>
             <select id="pain-type" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
               <option value="💓 抽痛 / 血管脈搏跳動痛">💓 抽痛 / 血管脈搏跳動痛</option>
               <option value="📍 刺痛 / 像針扎感">📍 刺痛 / 像針扎感</option>
@@ -296,7 +332,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">5. 服藥後改善狀況：</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1">5. 疼痛改善狀況：</label>
             <select id="pain-relief" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
               <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
               <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
@@ -318,11 +354,11 @@
       </div>
     </section>
 
-    <!-- 3. 用藥提醒頁籤 -->
+    <!-- 3. 用藥提醒頁籤 (依據餐別點選) -->
     <section id="tab-med" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>手動新增用藥提醒 (含雲端同步)</span>
+          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>依據餐別新增用藥提醒</span>
         </h2>
         <div class="flex flex-col gap-3 mb-4">
           <div>
@@ -330,14 +366,16 @@
             <input type="text" id="med-name" placeholder="例：脈優 (降血壓藥)" class="w-full border-2 border-slate-200 rounded-xl p-3 text-base font-bold focus:outline-none">
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">服用時段：</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1">選擇服藥餐別時段：</label>
             <select id="med-time" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
-              <option value="早上吃 (早餐後)">早上吃 (早餐後)</option>
-              <option value="中午吃 (午餐後)">中午吃 (午餐後)</option>
-              <option value="晚上吃 (晚餐後)">晚上吃 (晚餐後)</option>
-              <option value="三餐飯後">💊 三餐飯後 (早午晚)</option>
-              <option value="睡前吃">睡前吃</option>
-              <option value="需要時吃 (疼痛時)">需要時吃 (疼痛時)</option>
+              <option value="🌅 早餐前">🌅 早餐前服藥</option>
+              <option value="🥞 早餐後">🥞 早餐後服藥</option>
+              <option value="☀️ 午餐前">☀️ 午餐前服藥</option>
+              <option value="🍱 午餐後">🍱 午餐後服藥</option>
+              <option value="🌆 晚餐前">🌆 晚餐前服藥</option>
+              <option value="🍲 晚餐後">🍲 晚餐後服藥</option>
+              <option value="🌙 睡前">🌙 睡前服藥</option>
+              <option value="⚡ 需要時 (疼痛備用)">⚡ 需要時 (疼痛備用)</option>
             </select>
           </div>
           <div>
@@ -360,12 +398,19 @@
       </div>
     </section>
 
-    <!-- 4. 家人共同看診行事曆頁籤 -->
+    <!-- 4. 家人共同看診行事曆頁籤 (自訂行事曆顏色) -->
     <section id="tab-cal" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程 (雲端同步)</span>
+          <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程</span>
         </h2>
+        
+        <!-- 自訂行事曆顏色選擇器 -->
+        <div class="flex items-center justify-between mb-4 bg-indigo-50 p-3 rounded-2xl border border-indigo-200">
+          <label class="text-xs font-bold text-indigo-900">🎨 行事曆標記顏色：</label>
+          <input type="color" id="cal-theme-color" value="#4f46e5" onchange="changeCalendarColor(this.value)" class="w-12 h-9 rounded-xl cursor-pointer border-0 shadow-sm">
+        </div>
+
         <div class="flex flex-col gap-3 mb-4">
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">行程名稱 (例：三軍總醫院心臟科回診)：</label>
@@ -420,13 +465,15 @@
     let currentActiveUser = '王爺爺';
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
-    let selectedBodyZone = '左側-頭頂/頂葉';
+    let selectedBodyZone = '頭頂';
     
     let viewDate = new Date();
+    let currentCalendarColor = '#4f46e5';
 
     window.onload = function() {
       initDefaultDateTime();
       initUserSelect();
+      loadCalendarColor();
       loadUserData();
       initChart();
     };
@@ -452,6 +499,7 @@
 
     function switchUser(userName) {
       currentActiveUser = userName;
+      loadCalendarColor();
       loadUserData();
     }
 
@@ -466,6 +514,7 @@
         }
         currentActiveUser = cleanName;
         initUserSelect();
+        loadCalendarColor();
         loadUserData();
       }
     }
@@ -730,6 +779,21 @@
       loadUserData();
     }
 
+    function changeCalendarColor(color) {
+      currentCalendarColor = color;
+      localStorage.setItem(`cal_color_${currentActiveUser}`, color);
+      renderMonthlyCalendar();
+    }
+
+    function loadCalendarColor() {
+      const savedColor = localStorage.getItem(`cal_color_${currentActiveUser}`);
+      if (savedColor) {
+        currentCalendarColor = savedColor;
+        const colorInput = document.getElementById('cal-theme-color');
+        if (colorInput) colorInput.value = savedColor;
+      }
+    }
+
     function addCalendarEvent() {
       const title = document.getElementById('cal-title').value.trim();
       const date = document.getElementById('cal-date').value;
@@ -771,7 +835,6 @@
       loadUserData();
     }
 
-    // 💡 核心全功能雲端同步：從 SheetDB 自動抓取血壓、疼痛、用藥與行事曆
     async function loadUserData() {
       try {
         const res = await fetch(SHEETDB_API_URL);
@@ -799,7 +862,7 @@
                 id: idx + 2000,
                 date: r["時間"] ? r["時間"].split(' ')[0] : '',
                 time: r["時間"] ? r["時間"].split(' ')[1] : '',
-                part: noteStr.match(/部位:([^,]+)/)?.[1] || '頭部',
+                part: noteStr.match(/部位:([^,]+)/)?.[1] || '頭頂',
                 score: noteStr.match(/分數:(\d+)/)?.[1] || '1',
                 type: noteStr.match(/\((.*?)\)/)?.[1] || '抽痛',
                 freq: noteStr.match(/頻率:([^,]+)/)?.[1] || '偶爾發生',
@@ -814,7 +877,7 @@
               return {
                 id: idx + 3000,
                 name: noteStr.match(/藥名:([^,]+)/)?.[1] || '常備藥',
-                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '早上吃',
+                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '早餐後',
                 note: noteStr.match(/備註:(.+)/)?.[1] || '',
                 photo: ''
               };
@@ -910,7 +973,7 @@
         gridHtml += `
           <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
             <span class="text-xs font-black text-slate-700">${day}</span>
-            ${hasEvent ? '<span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse mb-1"></span>' : ''}
+            ${hasEvent ? `<span class="w-2.5 h-2.5 rounded-full animate-pulse mb-1" style="background-color: ${currentCalendarColor};"></span>` : ''}
           </div>
         `;
       }
@@ -923,10 +986,10 @@
 
       const calList = document.getElementById('calendar-list');
       calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => `
-        <div class="p-3.5 bg-indigo-50 rounded-2xl border border-indigo-200 flex justify-between items-start">
+        <div class="p-3.5 rounded-2xl border flex justify-between items-start" style="background-color: ${currentCalendarColor}10; border-color: ${currentCalendarColor}40;">
           <div>
-            <div class="text-xs font-bold text-indigo-700"><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</div>
-            <div class="text-base font-black text-indigo-950 mt-0.5">${e.title}</div>
+            <div class="text-xs font-bold" style="color: ${currentCalendarColor};"><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</div>
+            <div class="text-base font-black text-slate-900 mt-0.5">${e.title}</div>
             <div class="text-xs text-slate-600 mt-1 font-bold">備註：${e.note || '無'}</div>
           </div>
           <button onclick="deleteCalendarEvent(${e.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
