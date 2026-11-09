@@ -318,12 +318,23 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">5. 疼痛改善狀況：</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1">5. 緩解與改善方式 (可選擇止痛藥、休息或改善程度)：</label>
             <select id="pain-relief" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
-              <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
-              <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
-              <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
-              <option value="⚪ 尚未服藥">⚪ 尚未服藥</option>
+              <optgroup label="🛌 休息與處置方式">
+                <option value="🛏️ 躺下休息緩解">🛏️ 躺下休息緩解</option>
+                <option value="💧 多喝水休息">💧 多喝水休息</option>
+                <option value="🧘 深呼吸放鬆">🧘 深呼吸放鬆</option>
+                <option value="🧊 局部冷/熱敷">🧊 局部冷/熱敷</option>
+              </optgroup>
+              <optgroup id="pain-relief-meds-group" label="💊 服用家人藥物中的止痛藥">
+                <!-- 動態載入該長輩的藥物 -->
+              </optgroup>
+              <optgroup label="📊 疼痛改善結果評估">
+                <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
+                <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
+                <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
+                <option value="⚪ 尚未處理">⚪ 尚未處理</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -390,7 +401,7 @@
                 <label for="med-time-l-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🍱 午餐後</label>
               </div>
               <div>
-                <input type="checkbox" id="med-time-d-before" value="<ctrl42> 晚餐前" class="hidden med-time-checkbox">
+                <input type="checkbox" id="med-time-d-before" value="🌆 晚餐前" class="hidden med-time-checkbox">
                 <label for="med-time-d-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌆 晚餐前</label>
               </div>
               <div>
@@ -788,7 +799,17 @@
         })
       }).catch(err => console.log(err));
 
-      alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
+      const isAbnormal = (sys >= 130 || dia >= 80 || sys < 90 || dia < 60);
+      
+      if (isAbnormal) {
+        alert(`已成功儲存 ${currentActiveUser} 的血壓紀錄！\n⚠️ 偵測到血壓數值異常（偏高或偏低），系統已自動為您切換至「疼痛與不適紀錄」頁面，請記錄當下狀況與緩解方式。`);
+        switchTab('pain');
+        // 自動把日期時間帶入疼痛紀錄
+        document.getElementById('pain-date-input').value = dateVal;
+        document.getElementById('pain-time-input').value = timeVal;
+      } else {
+        alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
+      }
       loadUserData();
     }
 
@@ -1309,9 +1330,22 @@
 
       // 更新即時吃藥提醒卡片
       updateCurrentTimeDueMeds();
+      
+      // 動態更新疼痛緩解選項中的藥物清單
+      updatePainReliefMedsOptions(meds);
 
       renderMonthlyCalendar();
       updateChart(bpRecords);
+    }
+
+    function updatePainReliefMedsOptions(meds) {
+      const group = document.getElementById('pain-relief-meds-group');
+      if (!group) return;
+      if (!meds || meds.length === 0) {
+        group.innerHTML = `<option value="💊 服用常備止痛藥 (未登錄特定藥物)">💊 服用常備止痛藥 (未登錄特定藥物)</option>`;
+      } else {
+        group.innerHTML = meds.map(m => `<option value="💊 服用藥物: ${m.name}">💊 服用藥物: ${m.name} (${m.time})</option>`).join('');
+      }
     }
 
     function renderMonthlyCalendar() {
