@@ -590,12 +590,15 @@
       let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
       const container = document.getElementById('user-manage-list');
       container.innerHTML = users.map((u, index) => `
-        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border">
-          <span class="font-black text-slate-800 text-sm">${u}</span>
+        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <span class="font-black text-slate-800 text-sm flex items-center gap-1.5">
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${index + 1}</span>
+            ${u}
+          </span>
           <div class="flex items-center gap-1">
-            <button type="button" onclick="moveUser(${index}, -1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}">⬆️</button>
-            <button type="button" onclick="moveUser(${index}, 1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === users.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">⬇️</button>
-            <button type="button" onclick="removeUserItem('${u}')" class="bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded-lg text-xs font-bold ml-1">刪除</button>
+            <button type="button" onclick="moveUser(${index}, -1)" class="bg-white hover:bg-slate-100 border border-slate-300 px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}">⬆️ 上移</button>
+            <button type="button" onclick="moveUser(${index}, 1)" class="bg-white hover:bg-slate-100 border border-slate-300 px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === users.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">⬇️ 下移</button>
+            <button type="button" onclick="removeUserItem('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded-lg text-xs font-bold ml-1">🗑️ 刪除</button>
           </div>
         </div>
       `).join('');
@@ -605,25 +608,37 @@
       let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
       const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= users.length) return;
+      
+      // 交換位置
       const temp = users[index];
       users[index] = users[targetIndex];
       users[targetIndex] = temp;
+      
       localStorage.setItem('bp_user_list', JSON.stringify(users));
       renderUserManageList();
-      initUserSelect();
+
+      // 即時同步更新頂部下拉選單
+      const select = document.getElementById('user-select');
+      select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
+      select.value = currentActiveUser;
     }
 
     function removeUserItem(userName) {
-      if (confirm(`確定要移除「${userName}」的本地名單嗎？`)) {
+      if (confirm(`確定要刪除「${userName}」的長輩名單嗎？`)) {
         let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
         users = users.filter(u => u !== userName);
         if (users.length === 0) users = ['王爺爺'];
         localStorage.setItem('bp_user_list', JSON.stringify(users));
+        
         if (currentActiveUser === userName) {
           currentActiveUser = users[0];
         }
         renderUserManageList();
-        initUserSelect();
+        
+        // 即時同步更新頂部下拉選單與資料
+        const select = document.getElementById('user-select');
+        select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
+        select.value = currentActiveUser;
         loadUserData();
       }
     }
@@ -948,11 +963,33 @@
       const timeStr = selectedTimes.join(', ');
 
       if (photoInput.files && photoInput.files[0]) {
+        const file = photoInput.files[0];
         const reader = new FileReader();
         reader.onload = function(e) {
-          saveMedObj(name, timeStr, note, e.target.result);
+          // 壓縮圖片確保儲存與顯示正常
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+              if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            saveMedObj(name, timeStr, note, dataUrl);
+          };
+          img.src = e.target.result;
         };
-        reader.readAsDataURL(photoInput.files[0]);
+        reader.readAsDataURL(file);
       } else {
         saveMedObj(name, timeStr, note, '');
       }
@@ -1054,15 +1091,18 @@
         `;
       } else {
         dueContainer.innerHTML = dueMeds.map(m => `
-          <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3">
-            <div class="flex-1">
+          <div class="bg-white p-4 rounded-2xl border-2 border-amber-400 shadow-sm flex flex-col gap-2">
+            <div class="flex items-center justify-between">
               <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full">${m.time}</span>
-              <div class="font-black text-slate-900 text-lg mt-1 flex items-center gap-1.5">
-                <i class="fa-solid fa-capsules text-red-500"></i> ${m.name}
-              </div>
-              <div class="text-xs text-amber-900 font-bold mt-0.5"><i class="fa-solid fa-circle-info mr-1"></i>${m.note || '遵照醫囑服用'}</div>
+              <span class="text-xs text-slate-400 font-bold">藥物提醒</span>
             </div>
-            ${m.photo ? `<img src="${m.photo}" class="w-14 h-14 object-cover rounded-xl border-2 border-amber-300">` : ''}
+            <div class="font-black text-slate-900 text-xl flex items-center gap-2">
+              <i class="fa-solid fa-capsules text-red-500 text-2xl"></i> ${m.name}
+            </div>
+            <div class="text-sm text-amber-950 font-bold bg-amber-50 p-2 rounded-xl border border-amber-200">
+              <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>注意事項：${m.note || '遵照醫囑服用'}
+            </div>
+            ${m.photo ? `<div class="mt-2 text-center bg-slate-50 p-2 rounded-2xl border border-amber-200"><img src="${m.photo}" class="w-full max-h-72 object-contain rounded-xl shadow-md"></div>` : ''}
           </div>
         `).join('');
       }
@@ -1252,14 +1292,18 @@
       const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
       const medList = document.getElementById('med-list');
       medList.innerHTML = meds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無用藥提醒</div>' : meds.map(m => `
-        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-3">
-          <div class="flex-1">
-            <span class="bg-emerald-600 text-white font-bold text-[11px] px-2 py-0.5 rounded-full">${m.time}</span>
-            <div class="font-black text-emerald-950 text-base mt-1">${m.name}</div>
-            <div class="text-xs text-emerald-700 font-bold mt-0.5">${m.note || '遵照醫囑服用'}</div>
+        <div class="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-full">${m.time}</span>
+            <button onclick="deleteMedication(${m.id})" class="text-red-500 hover:text-red-700 text-xs font-bold bg-white px-3 py-1 rounded-xl border border-red-200 shadow-sm">刪除藥物</button>
           </div>
-          ${m.photo ? `<img src="${m.photo}" class="w-16 h-16 object-cover rounded-xl border-2 border-emerald-300 shadow-sm">` : ''}
-          <button onclick="deleteMedication(${m.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200 ml-1">刪除</button>
+          <div class="font-black text-emerald-950 text-xl flex items-center gap-2 mt-1">
+            <i class="fa-solid fa-pills text-emerald-600"></i> ${m.name}
+          </div>
+          <div class="text-xs text-emerald-800 font-bold bg-white/80 p-2 rounded-xl border border-emerald-100">
+            <i class="fa-solid fa-note-sticky text-emerald-600 mr-1"></i>${m.note || '遵照醫囑服用'}
+          </div>
+          ${m.photo ? `<div class="mt-2 text-center bg-white p-2 rounded-2xl border-2 border-emerald-200"><img src="${m.photo}" class="w-full max-h-72 object-contain rounded-xl shadow"></div>` : ''}
         </div>
       `).join('');
 
