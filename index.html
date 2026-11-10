@@ -72,9 +72,6 @@
         <button type="button" onclick="promptAddUser()" class="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white px-3.5 py-1.5 text-sm font-bold rounded-lg shadow cursor-pointer">
           <i class="fa-solid fa-user-plus mr-1"></i>新增
         </button>
-        <button type="button" onclick="exportDataBackup()" class="bg-amber-500 hover:bg-amber-400 text-white px-2.5 py-1.5 text-xs font-bold rounded-lg shadow cursor-pointer" title="備份資料">
-          <i class="fa-solid fa-download"></i>
-        </button>
       </div>
     </div>
   </header>
@@ -321,17 +318,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">5. 疼痛改善/處理方式：</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1">5. 疼痛改善狀況 / 緩解方式：</label>
             <select id="pain-relief" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
-              <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
-              <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
-              <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
-              <option value="🛌 臥床躺下休息">🛌 臥床躺下休息</option>
-              <option value="💧 多喝溫開水休息">💧 多喝溫開水休息</option>
-              <optgroup id="pain-relief-meds-group" label="💊 服用家人設定之止痛/常備藥物">
-                <!-- 動態填入用藥 -->
-              </optgroup>
-              <option value="⚪ 尚未處置">⚪ 尚未處置</option>
+              <!-- 動態載入選項 -->
             </select>
           </div>
         </div>
@@ -341,13 +330,9 @@
         </button>
       </div>
 
-      <!-- 疼痛歷史紀錄與統計 -->
-      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100 flex flex-col gap-4">
-        <h3 class="font-bold text-slate-700 border-b pb-1">疼痛與改善歷史紀錄</h3>
-        <!-- 統計摘要面板 -->
-        <div id="pain-stats-box" class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-xs text-emerald-950 font-bold flex flex-col gap-1">
-          <!-- 動態統計數據 -->
-        </div>
+      <!-- 疼痛歷史紀錄 -->
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
+        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">疼痛與改善歷史紀錄</h3>
         <div id="pain-history-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto"></div>
       </div>
     </section>
@@ -402,7 +387,7 @@
                 <label for="med-time-l-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🍱 午餐後</label>
               </div>
               <div>
-                <input type="checkbox" id="med-time-d-before" value="🌆 晚餐前" class="hidden med-time-checkbox">
+                <input type="checkbox" id="med-time-d-before" value="<ctrl42> 晚餐前" class="hidden med-time-checkbox">
                 <label for="med-time-d-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌆 晚餐前</label>
               </div>
               <div>
@@ -785,16 +770,15 @@
         })
       }).catch(err => console.log(err));
 
+      const isAbnormal = (sys >= 130 || dia >= 80 || sys < 90 || dia < 60);
       alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
-      
-      // 💡 若偵測血壓不正常（收縮壓≥130或<90，舒張壓≥80或<60），自動切換至疼痛紀錄頁面
-      if (sys >= 130 || dia >= 80 || sys < 90 || dia < 60) {
-        if (confirm("⚠️ 偵測到血壓數值異常（偏高或偏低），是否立即前往「疼痛與不適紀錄」頁面記錄當下身體狀況？")) {
+      loadUserData();
+
+      if (isAbnormal) {
+        if (confirm("⚠️ 偵測到血壓數值異常（偏高或偏低），是否立即切換至【疼痛紀錄】頁面，記錄伴隨的不適現象或頭暈頭痛？")) {
           switchTab('pain');
         }
       }
-
-      loadUserData();
     }
 
     // 💡 頁面刪除紀錄時，同步向 SheetDB 發送 DELETE 請求刪除雲端對應資料！
@@ -1074,17 +1058,15 @@
         `;
       } else {
         dueContainer.innerHTML = dueMeds.map(m => `
-          <div class="bg-white p-4 rounded-2xl border-2 border-amber-400 shadow-sm flex flex-col gap-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-1 rounded-full">${m.time}</span>
-                <div class="font-black text-slate-900 text-xl mt-1.5 flex items-center gap-1.5">
-                  <i class="fa-solid fa-capsules text-red-500"></i> ${m.name}
-                </div>
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3">
+            <div class="flex-1">
+              <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full">${m.time}</span>
+              <div class="font-black text-slate-900 text-lg mt-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-capsules text-red-500"></i> ${m.name}
               </div>
+              <div class="text-xs text-amber-900 font-bold mt-0.5"><i class="fa-solid fa-circle-info mr-1"></i>${m.note || '遵照醫囑服用'}</div>
             </div>
-            <div class="text-xs text-amber-900 font-bold"><i class="fa-solid fa-circle-info mr-1"></i>注意事項：${m.note || '遵照醫囑服用'}</div>
-            ${m.photo ? `<div class="w-full bg-slate-50 p-2 rounded-2xl border border-amber-200 text-center"><img src="${m.photo}" class="w-full max-h-60 object-contain rounded-xl"></div>` : ''}
+            ${m.photo ? `<img src="${m.photo}" class="w-14 h-14 object-cover rounded-xl border-2 border-amber-300">` : ''}
           </div>
         `).join('');
       }
@@ -1171,7 +1153,46 @@
       }
     }
 
-    async function loadUserData() {
+    async 
+    // 動態載入疼痛改善與緩解選項 (包含家人藥物、躺下休息、多喝水等)
+    function updatePainReliefOptions() {
+      const select = document.getElementById('pain-relief');
+      if (!select) return;
+      
+      let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
+      
+      let htmlOptions = `
+        <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
+        <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
+        <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
+        <option value="🛌 躺下休息 / 閉眼小睡">🛌 躺下休息 / 閉眼小睡</option>
+        <option value="💧 多喝溫開水休息">💧 多喝溫開水休息</option>
+        <option value="❄️ 局部冰敷 / 熱敷緩解">❄️ 局部冰敷 / 熱敷緩解</option>
+      `;
+
+      if (meds.length > 0) {
+        htmlOptions += `<optgroup label="💊 從家人藥物中選取止痛/常備藥">`;
+        meds.forEach(m => {
+          htmlOptions += `<option value="💊 服用 ${m.name}">💊 服用 ${m.name} (${m.time})</option>`;
+        });
+        htmlOptions += `</optgroup>`;
+      }
+
+      htmlOptions += `<option value="⚪ 尚未處理">⚪ 尚未處理</option>`;
+      select.innerHTML = htmlOptions;
+    }
+
+    // 放大圖片 Modal 預覽
+    function openPhotoModal(src) {
+      document.getElementById('modal-img-tag').src = src;
+      document.getElementById('photo-preview-modal').classList.remove('hidden');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photo-preview-modal').classList.add('hidden');
+    }
+
+    function loadUserData() {
       try {
         const res = await fetch(SHEETDB_API_URL);
         const rows = await res.json();
@@ -1184,4 +1205,222 @@
               id: idx + 1000,
               date: r["時間"] ? r["時間"].split(' ')[0] : '',
               time: r["時間"] ? r["時間"].split(' ')[1] : '',
-              slot: (r["時段"] === "早上" || r["時段"] === "晚上") ? r
+              slot: (r["時段"] === "早上" || r["時段"] === "晚上") ? r["時段"] : '早上',
+              sys: parseInt(r["收縮壓"]) || 120,
+              dia: parseInt(r["舒張壓"]) || 80,
+              pulse: parseInt(r["脈搏"]) || 72
+            })).reverse();
+            if (cloudBp.length > 0) localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
+
+            // 2. 同步疼痛紀錄
+            const cloudPain = userRows.filter(r => r["時段"] === "疼痛紀錄").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              return {
+                id: idx + 2000,
+                date: r["時間"] ? r["時間"].split(' ')[0] : '',
+                time: r["時間"] ? r["時間"].split(' ')[1] : '',
+                part: noteStr.match(/部位:([^,]+)/)?.[1] || '頭頂',
+                score: noteStr.match(/分數:(\d+)/)?.[1] || '1',
+                type: noteStr.match(/\((.*?)\)/)?.[1] || '抽痛',
+                freq: noteStr.match(/頻率:([^,]+)/)?.[1] || '偶爾發生',
+                relief: noteStr.match(/改善:(.+)/)?.[1] || '尚未服藥'
+              };
+            }).reverse();
+            if (cloudPain.length > 0) localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(cloudPain));
+
+            // 3. 同步用藥提醒
+            const cloudMeds = userRows.filter(r => r["時段"] === "用藥紀錄").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              return {
+                id: idx + 3000,
+                name: noteStr.match(/藥名:([^,]+)/)?.[1] || '常備藥',
+                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '🥞 早餐後',
+                note: noteStr.match(/備註:(.+)/)?.[1] || '',
+                photo: ''
+              };
+            });
+            if (cloudMeds.length > 0) localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(cloudMeds));
+
+            // 4. 同步看診行事曆
+            const cloudCal = userRows.filter(r => r["時段"] === "行事曆行程").map((r, idx) => {
+              const noteStr = r["備註"] || "";
+              const dt = r["時間"] || "";
+              return {
+                id: idx + 4000,
+                title: noteStr.match(/行程:([^,]+)/)?.[1] || '回診行程',
+                color: noteStr.match(/顏色:([^,]+)/)?.[1] || '#3b82f6',
+                date: dt.split(' ')[0] || '',
+                time: dt.split(' ')[1] || '',
+                note: noteStr.match(/備註:(.+)/)?.[1] || ''
+              };
+            });
+            if (cloudCal.length > 0) localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(cloudCal));
+          }
+        }
+      } catch(e) { console.log("Cloud sync fallback to local storage"); }
+
+      // 渲染血壓紀錄
+      const bpRecords = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
+      const bpList = document.getElementById('bp-history-list');
+      bpList.innerHTML = bpRecords.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無血壓紀錄</div>' : bpRecords.map(r => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
+          <div>
+            <span class="text-xs font-bold text-emerald-700">${r.date} ${r.time} (${r.slot})</span>
+            <div class="text-xl font-black text-slate-800">
+              ${r.sys} / ${r.dia} <span class="text-xs text-slate-500 font-normal">mmHg (脈搏:${r.pulse})</span>
+            </div>
+          </div>
+          <button onclick="deleteBPRecord(${r.id})" class="text-red-500 hover:text-red-700 px-2.5 py-1 text-xs font-bold bg-red-50 rounded-lg border border-red-200">刪除</button>
+        </div>
+      `).join('');
+
+      // 渲染疼痛紀錄
+      const pains = JSON.parse(localStorage.getItem(`pain_${currentActiveUser}`)) || [];
+      const painList = document.getElementById('pain-history-list');
+      painList.innerHTML = pains.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無疼痛紀錄</div>' : pains.map(p => `
+        <div class="p-3 bg-slate-50 rounded-xl border flex flex-col gap-1 text-sm">
+          <div class="flex justify-between font-bold text-slate-700">
+            <span>${p.date} ${p.time}</span>
+            <span class="text-red-600">${p.part}</span>
+          </div>
+          <div class="font-black text-slate-900">疼痛：${p.score}分 (${p.type})</div>
+          <div class="text-xs text-slate-600">頻率：${p.freq} | 改善：${p.relief}</div>
+          <div class="flex justify-end">
+            <button onclick="deletePainRecord(${p.id})" class="text-red-500 hover:text-red-700 px-2.5 py-1 text-xs font-bold bg-red-50 rounded-lg border border-red-200">刪除</button>
+          </div>
+        </div>
+      `).join('');
+
+      // 渲染用藥提醒
+      const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
+      const medList = document.getElementById('med-list');
+      medList.innerHTML = meds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無用藥提醒</div>' : meds.map(m => `
+        <div class="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200 flex items-center justify-between gap-3 shadow-sm">
+          <div class="flex-1">
+            <span class="bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-full">${m.time}</span>
+            <div class="font-black text-emerald-950 text-lg mt-1.5">${m.name}</div>
+            <div class="text-xs text-emerald-800 font-bold mt-1"><i class="fa-solid fa-circle-info mr-1"></i>${m.note || '遵照醫囑服用'}</div>
+          </div>
+          ${m.photo ? `<div onclick="openPhotoModal('${m.photo}')" class="cursor-pointer group relative"><img src="${m.photo}" class="w-24 h-24 object-cover rounded-2xl border-4 border-emerald-300 shadow-md transition group-hover:scale-105" title="點擊放大圖片"><span class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">🔍 放大</span></div>` : ''}
+          <button onclick="deleteMedication(${m.id})" class="text-red-500 text-xs font-bold bg-white px-3 py-2 rounded-xl border border-red-200 shadow-sm ml-1">刪除</button>
+        </div>
+      `).join('');
+
+      updatePainReliefOptions();
+
+      // 更新即時吃藥提醒卡片
+      updateCurrentTimeDueMeds();
+
+      renderMonthlyCalendar();
+      updateChart(bpRecords);
+    }
+
+    function renderMonthlyCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
+
+      let gridHtml = '';
+      for (let i = 0; i < firstDayIndex; i++) {
+        gridHtml += `<div class="h-14 bg-slate-50/50 rounded-lg"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateStr = `${year}-${mm}-${dd}`;
+        const dayEvents = events.filter(e => e.date === dateStr);
+
+        let dotsHtml = '';
+        if (dayEvents.length > 0) {
+          dotsHtml = `<div class="flex gap-1 flex-wrap justify-center mb-1">` + dayEvents.map(e => `<span class="w-2.5 h-2.5 rounded-full" style="background-color: ${e.color || '#3b82f6'};"></span>`).join('') + `</div>`;
+        }
+
+        gridHtml += `
+          <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
+            <span class="text-xs font-black text-slate-700">${day}</span>
+            ${dotsHtml}
+          </div>
+        `;
+      }
+      document.getElementById('calendar-grid').innerHTML = gridHtml;
+
+      const monthEvents = events.filter(e => {
+        const [eY, eM] = e.date.split('-');
+        return parseInt(eY) === year && parseInt(eM) === (month + 1);
+      });
+
+      const calList = document.getElementById('calendar-list');
+      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => {
+        const itemColor = e.color || '#3b82f6';
+        return `
+        <div class="p-3.5 rounded-2xl border-l-8 flex justify-between items-start bg-slate-50 shadow-sm border" style="border-left-color: ${itemColor};">
+          <div>
+            <div class="text-xs font-bold flex items-center gap-1 text-slate-600">
+              <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${itemColor};"></span>
+              <span><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</span>
+            </div>
+            <div class="text-base font-black text-slate-900 mt-0.5">${e.title}</div>
+            <div class="text-xs text-slate-600 mt-1 font-bold">備註：${e.note || '無'}</div>
+          </div>
+          <button onclick="deleteCalendarEvent(${e.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
+        </div>
+      `}).join('');
+    }
+
+    let bpChart;
+    function initChart() {
+      const ctx = document.getElementById('bpChart').getContext('2d');
+      bpChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function updateChart(records) {
+      if (!bpChart) return;
+      const recent = [...records].reverse().slice(-14);
+      bpChart.data.labels = recent.map(r => `${r.date.slice(5)} ${r.slot}`);
+      bpChart.data.datasets = [
+        { label: '收縮壓 (mmHg)', data: recent.map(r => r.sys), borderColor: '#ef4444', backgroundColor: '#ef444420', tension: 0.2 },
+        { label: '舒張壓 (mmHg)', data: recent.map(r => r.dia), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.2 }
+      ];
+      bpChart.update();
+    }
+  </script>
+
+  <!-- 長輩管理與排序 Modal -->
+  <div id="user-manage-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-users-gear mr-1"></i> 長輩名單排序與管理</h3>
+        <button onclick="closeUserManageModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+      <div id="user-manage-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+        <!-- 動態列出長輩與上下移動按鈕 -->
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeUserManageModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow">完成儲存</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 藥物照片大圖預覽 Modal -->
+  <div id="photo-preview-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" onclick="closePhotoModal()">
+    <div class="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl flex flex-col items-center gap-3 relative" onclick="event.stopPropagation()">
+      <button onclick="closePhotoModal()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl">&times;</button>
+      <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-capsules mr-1"></i> 藥物照片大圖</h3>
+      <img id="modal-img-tag" src="" class="w-full max-h-80 object-contain rounded-2xl border-2 border-emerald-200 shadow">
+      <button onclick="closePhotoModal()" class="w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow">關閉預覽</button>
+    </div>
+  </div>
+
+</body>
+</html>
