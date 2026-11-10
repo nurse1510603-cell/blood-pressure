@@ -547,9 +547,12 @@
       document.getElementById('cal-time').value = "09:00";
     }
 
-    async function initUserSelect() {
-      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
-      
+        async function initUserSelect() {
+      let users = JSON.parse(localStorage.getItem('bp_user_list')) || ['媽咪', ...DEFAULT_USERS];
+      if (!users.includes('媽咪')) {
+        users.unshift('媽咪');
+      }
+
       // 自動從雲端抓取所有出現過的長輩名稱 (如 '媽咪')
       try {
         const res = await fetch(SHEETDB_API_URL);
@@ -557,91 +560,38 @@
         if (Array.isArray(rows)) {
           rows.forEach(r => {
             const u = r["長輩"];
-            if (u && !users.includes(u)) {
-              users.push(u);
+            if (u && typeof u === 'string' && u.trim() !== "" && !users.includes(u.trim())) {
+              users.push(u.trim());
             }
           });
           localStorage.setItem('bp_user_list', JSON.stringify(users));
         }
       } catch(e) {}
 
+      renderUserSelectOptions(users);
+    }
+
+    function renderUserSelectOptions(users) {
+      if (!users || users.length === 0) users = ['媽咪', '王爺爺', '李奶奶'];
       const select = document.getElementById('user-select');
       select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
       if (!users.includes(currentActiveUser)) {
-        currentActiveUser = users[0] || '王爺爺';
+        currentActiveUser = users[0];
       }
       select.value = currentActiveUser;
     }
 
-    function openUserManageModal() {
-      renderUserManageList();
-      document.getElementById('user-manage-modal').classList.remove('hidden');
-    }
-
-    function closeUserManageModal() {
-      document.getElementById('user-manage-modal').classList.add('hidden');
-      initUserSelect();
-    }
-
-    function renderUserManageList() {
-      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
-      const container = document.getElementById('user-manage-list');
-      container.innerHTML = users.map((u, index) => `
-        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border">
-          <span class="font-black text-slate-800 text-sm">${u}</span>
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="moveUser(${index}, -1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}">⬆️</button>
-            <button type="button" onclick="moveUser(${index}, 1)" class="bg-white border px-2 py-1 rounded-lg text-xs font-bold text-slate-700 ${index === users.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">⬇️</button>
-            <button type="button" onclick="removeUserItem('${u}')" class="bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded-lg text-xs font-bold ml-1">刪除</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function moveUser(index, direction) {
-      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= users.length) return;
-      const temp = users[index];
-      users[index] = users[targetIndex];
-      users[targetIndex] = temp;
-      localStorage.setItem('bp_user_list', JSON.stringify(users));
-      renderUserManageList();
-      initUserSelect();
-    }
-
-    function removeUserItem(userName) {
-      if (confirm(`確定要移除「${userName}」的本地名單嗎？`)) {
-        let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
-        users = users.filter(u => u !== userName);
-        if (users.length === 0) users = ['王爺爺'];
-        localStorage.setItem('bp_user_list', JSON.stringify(users));
-        if (currentActiveUser === userName) {
-          currentActiveUser = users[0];
-        }
-        renderUserManageList();
-        initUserSelect();
-        loadUserData();
-      }
-    }
-
-    function switchUser(userName) {
-      currentActiveUser = userName;
-      loadCalendarColor();
-      loadUserData();
-    }
-
     function promptAddUser() {
-      const name = prompt("請輸入新長輩的姓名或稱呼 (例: 張爺爺):");
+      const name = prompt("請輸入新長輩的姓名或稱呼 (例: 媽咪、張爺爺):");
       if (name && name.trim() !== "") {
         const cleanName = name.trim();
-        let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
+        let users = JSON.parse(localStorage.getItem('bp_user_list')) || ['媽咪', ...DEFAULT_USERS];
         if (!users.includes(cleanName)) {
           users.push(cleanName);
           localStorage.setItem('bp_user_list', JSON.stringify(users));
         }
         currentActiveUser = cleanName;
-        initUserSelect();
+        renderUserSelectOptions(users);
         loadCalendarColor();
         loadUserData();
       }
