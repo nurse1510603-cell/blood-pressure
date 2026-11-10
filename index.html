@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     html {
-      touch-action: manipulation; /* 防止雙擊畫面放大 */
+      touch-action: manipulation;
     }
     body {
       font-family: 'Noto Sans TC', sans-serif;
@@ -30,17 +30,27 @@
       transform: translateY(4px);
       box-shadow: 0 0 0 #cbd5e1;
     }
-    .body-zone-btn {
-      transition: all 0.15s ease;
+    .step-btn.active {
+      background-color: #047857 !important;
+      color: white !important;
+      border-color: #065f46 !important;
     }
-    .body-zone-btn:active {
-      transform: scale(0.95);
+    .side-btn.active {
+      background-color: #2563eb !important;
+      color: white !important;
+      border-color: #1d4ed8 !important;
+    }
+    .detail-btn.active {
+      background-color: #ef4444 !important;
+      color: white !important;
+      border-color: #b91c1c !important;
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
     }
     .med-time-checkbox:checked + label {
-      background-color: #059669 !important;
-      color: white !important;
-      border-color: #047857 !important;
-      font-weight: 900;
+      background-color: #059669;
+      color: white;
+      border-color: #047857;
     }
   </style>
 </head>
@@ -66,9 +76,6 @@
         <span class="text-sm font-bold whitespace-nowrap">目前長輩：</span>
         <select id="user-select" onchange="switchUser(this.value)" class="bg-white text-emerald-950 font-black text-lg rounded-lg px-3 py-1 flex-1 focus:outline-none">
         </select>
-        <button type="button" onclick="openUserManageModal()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-200 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-emerald-600 cursor-pointer" title="排序與管理長輩">
-          <i class="fa-solid fa-arrow-up-wide-short mr-1"></i>排序
-        </button>
         <button type="button" onclick="promptAddUser()" class="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white px-3.5 py-1.5 text-sm font-bold rounded-lg shadow cursor-pointer">
           <i class="fa-solid fa-user-plus mr-1"></i>新增
         </button>
@@ -78,7 +85,7 @@
 
   <main class="max-w-md mx-auto p-4 flex flex-col gap-6">
 
-    <!-- 頁籤導覽 (4個分頁) -->
+    <!-- 頁籤導覽 -->
     <div class="grid grid-cols-4 gap-1.5 bg-emerald-100 p-1.5 rounded-2xl text-center">
       <button id="tab-bp-btn" onclick="switchTab('bp')" class="py-2.5 font-black text-sm rounded-xl bg-white text-emerald-800 shadow">
         <i class="fa-solid fa-stethoscope block text-base mb-0.5"></i>血壓
@@ -198,7 +205,7 @@
         </button>
       </div>
 
-      <!-- 長期趨勢與長輩大字列表 -->
+      <!-- 長期趨勢與歷史列表 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-xl font-black text-emerald-900">
@@ -211,12 +218,12 @@
         <div class="h-56 mb-4">
           <canvas id="bpChart"></canvas>
         </div>
-        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">歷史紀錄與修改/刪除</h3>
+        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">歷史紀錄與刪除同步</h3>
         <div id="bp-history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
       </div>
     </section>
 
-    <!-- 2. 疼痛紀錄頁籤 (三階段點選：上下肢頭部/區域 -> 左右側 -> 細項) -->
+    <!-- 2. 疼痛紀錄頁籤 (三階部位選擇、改善處置、對應藥物) -->
     <section id="tab-pain" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
@@ -240,45 +247,43 @@
           </div>
         </div>
 
-        <!-- 三階層部位選擇器 -->
-        <div class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200 mb-4 flex flex-col gap-3">
-          <div class="text-center font-black text-emerald-950 text-sm border-b border-emerald-200 pb-1">
-            📍 依序選擇不適部位 (區域 ➔ 左右側 ➔ 細項)
+        <!-- 3 階段部位選擇器 -->
+        <div class="bg-emerald-50/70 p-4 rounded-3xl border-2 border-emerald-200 mb-4">
+          
+          <!-- 階段 1：區域 -->
+          <div class="mb-3">
+            <div class="text-xs font-black text-emerald-900 mb-1.5">第一步：選擇身體大分區</div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btn-region-head" onclick="setPainRegion('head')" class="step-btn bg-white border border-emerald-300 text-emerald-900 p-2 rounded-xl text-xs font-black active">頭部與臉部</button>
+              <button type="button" id="btn-region-upper" onclick="setPainRegion('upper')" class="step-btn bg-white border border-emerald-300 text-emerald-900 p-2 rounded-xl text-xs font-black">上肢部位</button>
+              <button type="button" id="btn-region-lower" onclick="setPainRegion('lower')" class="step-btn bg-white border border-emerald-300 text-emerald-900 p-2 rounded-xl text-xs font-black">下肢部位</button>
+              <button type="button" id="btn-region-torso" onclick="setPainRegion('torso')" class="step-btn bg-white border border-emerald-300 text-emerald-900 p-2 rounded-xl text-xs font-black">軀幹與背部</button>
+            </div>
           </div>
 
-          <!-- 步驟 A: 選擇大區域 -->
-          <div>
-            <div class="text-xs font-black text-slate-600 mb-1.5">【步驟 1】選擇身體大區域：</div>
+          <!-- 階段 2：左右側/雙側 -->
+          <div class="mb-3">
+            <div class="text-xs font-black text-blue-900 mb-1.5">第二步：選擇左右側 / 位置</div>
             <div class="grid grid-cols-4 gap-1.5">
-              <button type="button" id="region-btn-head" onclick="selectPainRegion('head')" class="body-region-btn bg-emerald-600 text-white border-2 border-emerald-700 py-2 rounded-xl text-xs font-black shadow-sm">👤 頭臉</button>
-              <button type="button" id="region-btn-arm" onclick="selectPainRegion('arm')" class="body-region-btn bg-white border-2 border-blue-300 text-blue-900 py-2 rounded-xl text-xs font-black shadow-sm">💪 上肢</button>
-              <button type="button" id="region-btn-leg" onclick="selectPainRegion('leg')" class="body-region-btn bg-white border-2 border-rose-300 text-rose-900 py-2 rounded-xl text-xs font-black shadow-sm">🦵 下肢</button>
-              <button type="button" id="region-btn-trunk" onclick="selectPainRegion('trunk')" class="body-region-btn bg-white border-2 border-emerald-300 text-emerald-900 py-2 rounded-xl text-xs font-black shadow-sm">🪵 軀幹背</button>
+              <button type="button" id="btn-side-left" onclick="setPainSide('左側')" class="side-btn bg-white border border-blue-300 text-blue-900 p-2 rounded-xl text-xs font-black">左側</button>
+              <button type="button" id="btn-side-right" onclick="setPainSide('右側')" class="side-btn bg-white border border-blue-300 text-blue-900 p-2 rounded-xl text-xs font-black">右側</button>
+              <button type="button" id="btn-side-both" onclick="setPainSide('雙側')" class="side-btn bg-white border border-blue-300 text-blue-900 p-2 rounded-xl text-xs font-black">雙側</button>
+              <button type="button" id="btn-side-center" onclick="setPainSide('中央')" class="side-btn bg-white border border-blue-300 text-blue-900 p-2 rounded-xl text-xs font-black active">中央/整體</button>
             </div>
           </div>
 
-          <!-- 步驟 B: 選擇左右側 -->
+          <!-- 階段 3：細項部位 -->
           <div>
-            <div class="text-xs font-black text-slate-600 mb-1.5">【步驟 2】選擇左右側：</div>
-            <div class="grid grid-cols-4 gap-1.5">
-              <button type="button" id="side-btn-left" onclick="selectPainSide('左側')" class="body-side-btn bg-slate-800 text-white border-2 border-slate-900 py-1.5 rounded-xl text-xs font-black">👈 左側</button>
-              <button type="button" id="side-btn-right" onclick="selectPainSide('右側')" class="body-side-btn bg-white border-2 border-slate-300 text-slate-800 py-1.5 rounded-xl text-xs font-black">👉 右側</button>
-              <button type="button" id="side-btn-both" onclick="selectPainSide('雙側')" class="body-side-btn bg-white border-2 border-slate-300 text-slate-800 py-1.5 rounded-xl text-xs font-black">🙌 雙側</button>
-              <button type="button" id="side-btn-center" onclick="selectPainSide('中央')" class="body-side-btn bg-white border-2 border-slate-300 text-slate-800 py-1.5 rounded-xl text-xs font-black">🎯 中央</button>
+            <div class="text-xs font-black text-rose-900 mb-1.5">第三步：選擇具體細項部位</div>
+            <div id="pain-detail-container" class="grid grid-cols-3 gap-2">
+              <!-- 動態生成 -->
             </div>
           </div>
 
-          <!-- 步驟 C: 選擇細項 -->
-          <div>
-            <div class="text-xs font-black text-slate-600 mb-1.5">【步驟 3】選擇具體細項：</div>
-            <div id="pain-detail-container" class="grid grid-cols-3 gap-1.5 bg-white p-2.5 rounded-2xl border border-emerald-200">
-              <!-- 動態渲染細項按鈕 -->
-            </div>
-          </div>
         </div>
 
         <div class="text-center mb-4 font-black text-red-600 text-base bg-red-50 p-2 rounded-xl border border-red-200">
-          已選部位：<span id="selected-zone-text" class="text-lg underline">頭臉 - 左側 頭頂</span>
+          已選部位：<span id="selected-zone-text" class="text-lg underline">中央 頭頂</span>
         </div>
 
         <!-- 疼痛程度 1-10分 -->
@@ -291,7 +296,7 @@
           <input type="range" id="pain-score" min="1" max="10" value="1" oninput="updatePainDisplay(this.value)" class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
         </div>
 
-        <!-- 疼痛形式與頻率、改善狀況 -->
+        <!-- 疼痛形式、頻率、處置方式與藥物點選 -->
         <div class="grid grid-cols-1 gap-3 mb-4">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">3. 疼痛形式：</label>
@@ -317,10 +322,35 @@
               <option value="特定動作/按壓時痛">特定動作/按壓時痛</option>
             </select>
           </div>
+          
+          <!-- 改善方式與吃藥細項 -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">5. 改善方式：</label>
+              <select id="pain-method" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
+                <option value="💊 服用藥物改善">💊 服用藥物改善</option>
+                <option value="♨️ 局部熱敷改善">♨️ 局部熱敷改善</option>
+                <option value="🧊 冰敷鎮痛">🧊 冰敷鎮痛</option>
+                <option value="🛋️ 臥床休息">🛋️ 臥床休息</option>
+                <option value="💆 輕微按摩拉伸">💆 輕微按摩拉伸</option>
+                <option value="❓ 尚未做處置">❓ 尚未做處置</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">點選吃哪種藥改善：</label>
+              <select id="pain-med-select" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
+                <option value="無/未服藥">無 / 未服藥</option>
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">5. 疼痛改善狀況 / 緩解方式：</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1">6. 處置後改善狀況：</label>
             <select id="pain-relief" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-sm bg-white focus:outline-none">
-              <!-- 動態載入選項 -->
+              <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
+              <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
+              <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
+              <option value="⚪ 觀察中">⚪ 觀察中</option>
             </select>
           </div>
         </div>
@@ -332,76 +362,62 @@
 
       <!-- 疼痛歷史紀錄 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
-        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">疼痛與改善歷史紀錄</h3>
+        <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">疼痛與處置改善歷史</h3>
         <div id="pain-history-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto"></div>
       </div>
     </section>
 
-    <!-- 3. 用藥提醒頁籤 (支援複選餐別與即時提醒) -->
+    <!-- 3. 用藥提醒頁籤 (複選時段、時間導向、備用藥不置頂) -->
     <section id="tab-med" class="flex flex-col gap-6 hidden">
-
-      <!-- ⏰ 直觀時間提醒卡片 -->
-      <div class="bg-amber-50 rounded-3xl p-5 shadow-lg border-2 border-amber-300">
-        <div class="flex justify-between items-center border-b-2 border-amber-200 pb-2 mb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl animate-bounce">⏰</span>
-            <div>
-              <h2 class="text-lg font-black text-amber-950">現在時間用藥提醒</h2>
-              <div id="current-time-display" class="text-xs font-bold text-amber-800">載入中...</div>
-            </div>
-          </div>
-          <button onclick="loadUserData()" class="bg-amber-200 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-xl">重新整理</button>
+      <!-- ⏰ 直觀依時間吃藥提醒卡片 (長輩專用) -->
+      <div class="bg-gradient-to-r from-amber-500 to-emerald-600 rounded-3xl p-5 text-white shadow-xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="font-black text-sm bg-black/20 px-3 py-1 rounded-full"><i class="fa-solid fa-clock mr-1"></i>目前時間：<span id="current-phone-time">--:--</span></span>
+          <span id="current-meal-slot" class="font-bold text-xs bg-white/20 px-2.5 py-1 rounded-full">計算中...</span>
         </div>
-
-        <div id="due-meds-container" class="flex flex-col gap-2">
-          <!-- 動態顯示現在該吃的藥物 -->
+        <h3 class="text-xl font-black mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-bell animate-bounce"></i> 現在該吃的藥：
+        </h3>
+        <div id="active-med-box" class="bg-white/10 backdrop-blur-md border border-white/30 rounded-2xl p-3 flex flex-col gap-2">
+          <div class="text-sm font-bold opacity-90">讀取中...</div>
         </div>
       </div>
 
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
-          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>新增用藥提醒 (可複選餐別時段)</span>
+          <span><i class="fa-solid fa-capsules text-emerald-600 mr-2"></i>新增用藥提醒 (支持複選時段)</span>
         </h2>
         <div class="flex flex-col gap-3 mb-4">
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">藥物名稱：</label>
-            <input type="text" id="med-name" placeholder="例：脈優 (降血壓藥)" class="w-full border-2 border-slate-200 rounded-xl p-3 text-base font-bold focus:outline-none">
+            <input type="text" id="med-name" placeholder="例：脈優 (降血壓藥) / 普拿疼" class="w-full border-2 border-slate-200 rounded-xl p-3 text-base font-bold focus:outline-none">
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">選擇服藥餐別時段 (可複選)：</label>
+            <label class="block text-xs font-bold text-gray-600 mb-2">選擇服藥餐別時段 (可複選)：</label>
             <div class="grid grid-cols-2 gap-2">
-              <div>
-                <input type="checkbox" id="med-time-b-before" value="🌅 早餐前" class="hidden med-time-checkbox">
-                <label for="med-time-b-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌅 早餐前</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-b-after" value="🥞 早餐後" class="hidden med-time-checkbox">
-                <label for="med-time-b-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🥞 早餐後</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-l-before" value="☀️ 午餐前" class="hidden med-time-checkbox">
-                <label for="med-time-l-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">☀️ 午餐前</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-l-after" value="🍱 午餐後" class="hidden med-time-checkbox">
-                <label for="med-time-l-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🍱 午餐後</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-d-before" value="🌆 晚餐前" class="hidden med-time-checkbox">
-                <label for="med-time-d-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌆 晚餐前</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-d-after" value="🍲 晚餐後" class="hidden med-time-checkbox">
-                <label for="med-time-d-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🍲 晚餐後</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-sleep" value="🌙 睡前" class="hidden med-time-checkbox">
-                <label for="med-time-sleep" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌙 睡前</label>
-              </div>
-              <div>
-                <input type="checkbox" id="med-time-prn" value="⚡ 需要時" class="hidden med-time-checkbox">
-                <label for="med-time-prn" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">⚡ 需要時</label>
-              </div>
+              <input type="checkbox" id="m-slot-1" value="🌅 早餐前" class="med-time-checkbox hidden">
+              <label for="m-slot-1" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🌅 早餐前</label>
+              
+              <input type="checkbox" id="m-slot-2" value="🥞 早餐後" class="med-time-checkbox hidden">
+              <label for="m-slot-2" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🥞 早餐後</label>
+              
+              <input type="checkbox" id="m-slot-3" value="☀️ 午餐前" class="med-time-checkbox hidden">
+              <label for="m-slot-3" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">☀️ 午餐前</label>
+              
+              <input type="checkbox" id="m-slot-4" value="🍱 午餐後" class="med-time-checkbox hidden">
+              <label for="m-slot-4" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🍱 午餐後</label>
+
+              <input type="checkbox" id="m-slot-5" value="🌆 晚餐前" class="med-time-checkbox hidden">
+              <label for="m-slot-5" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🌆 晚餐前</label>
+
+              <input type="checkbox" id="m-slot-6" value="🍲 晚餐後" class="med-time-checkbox hidden">
+              <label for="m-slot-6" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🍲 晚餐後</label>
+
+              <input type="checkbox" id="m-slot-7" value="🌙 睡前" class="med-time-checkbox hidden">
+              <label for="m-slot-7" class="border-2 border-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">🌙 睡前</label>
+
+              <input type="checkbox" id="m-slot-8" value="⚡ 需要時 (疼痛備用)" class="med-time-checkbox hidden">
+              <label for="m-slot-8" class="border-2 border-amber-300 text-amber-800 font-bold p-2 rounded-xl text-xs text-center cursor-pointer select-none">⚡ 需要時 (疼痛備用)</label>
             </div>
           </div>
           <div>
@@ -419,36 +435,32 @@
       </div>
 
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
-        <h2 class="text-xl font-black text-emerald-900 mb-3">長輩用藥全覽指南</h2>
+        <h2 class="text-xl font-black text-emerald-900 mb-3">日常定時用藥指南</h2>
         <div id="med-list" class="flex flex-col gap-3"></div>
+
+        <h2 class="text-lg font-black text-amber-900 mt-6 mb-3 pt-3 border-t border-slate-200 flex items-center gap-1.5">
+          <span>⚡ 需要時 (備用藥物)</span>
+          <span class="text-xs text-slate-500 font-normal">不自動置頂擠佔</span>
+        </h2>
+        <div id="asneeded-med-list" class="flex flex-col gap-3"></div>
       </div>
     </section>
 
-    <!-- 4. 家人共同看診行事曆頁籤 (自訂行事曆顏色) -->
+    <!-- 4. 看診行事曆頁籤 -->
     <section id="tab-cal" class="flex flex-col gap-6 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <h2 class="text-xl font-black text-emerald-900 border-b-2 border-emerald-100 pb-2 mb-4">
           <span><i class="fa-solid fa-calendar-check text-emerald-600 mr-2"></i>新增看診與健康行程</span>
         </h2>
         
-        <!-- 本次記事顏色選擇 -->
-        <div class="mb-4 bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200">
-          <label class="block text-xs font-bold text-indigo-900 mb-2">🎨 選擇此筆記事標記顏色：</label>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="selectEventColor('#ef4444')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white shadow color-btn" data-color="#ef4444"></button>
-            <button type="button" onclick="selectEventColor('#f97316')" class="w-7 h-7 rounded-full bg-orange-500 border-2 border-white shadow color-btn" data-color="#f97316"></button>
-            <button type="button" onclick="selectEventColor('#eab308')" class="w-7 h-7 rounded-full bg-yellow-500 border-2 border-white shadow color-btn" data-color="#eab308"></button>
-            <button type="button" onclick="selectEventColor('#10b981')" class="w-7 h-7 rounded-full bg-emerald-500 border-2 border-white shadow color-btn" data-color="#10b981"></button>
-            <button type="button" onclick="selectEventColor('#3b82f6')" class="w-7 h-7 rounded-full bg-blue-500 border-2 border-white shadow color-btn" data-color="#3b82f6"></button>
-            <button type="button" onclick="selectEventColor('#8b5cf6')" class="w-7 h-7 rounded-full bg-purple-500 border-2 border-white shadow color-btn" data-color="#8b5cf6"></button>
-            <button type="button" onclick="selectEventColor('#ec4899')" class="w-7 h-7 rounded-full bg-pink-500 border-2 border-white shadow color-btn" data-color="#ec4899"></button>
-            <input type="color" id="cal-event-color" value="#3b82f6" class="w-9 h-8 rounded-xl cursor-pointer border-0 shadow ml-auto">
-          </div>
+        <div class="flex items-center justify-between mb-4 bg-indigo-50 p-3 rounded-2xl border border-indigo-200">
+          <label class="text-xs font-bold text-indigo-900">🎨 行事曆標記顏色：</label>
+          <input type="color" id="cal-theme-color" value="#4f46e5" onchange="changeCalendarColor(this.value)" class="w-12 h-9 rounded-xl cursor-pointer border-0 shadow-sm">
         </div>
 
         <div class="flex flex-col gap-3 mb-4">
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">行程名稱 (例：三軍總醫院心臟科回診)：</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1">行程名稱：</label>
             <input type="text" id="cal-title" placeholder="例：慢性病連續處方籤拿藥" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-base focus:outline-none">
           </div>
           <div class="grid grid-cols-2 gap-2">
@@ -471,7 +483,6 @@
         </button>
       </div>
 
-      <!-- 月份網格檢視容器 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-100">
         <div class="flex justify-between items-center mb-4">
           <button onclick="changeMonth(-1)" class="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl font-bold text-sm"><i class="fa-solid fa-chevron-left"></i> 上個月</button>
@@ -479,11 +490,9 @@
           <button onclick="changeMonth(1)" class="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl font-bold text-sm">下個月 <i class="fa-solid fa-chevron-right"></i></button>
         </div>
 
-        <!-- 星期表頭 -->
         <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 mb-2">
           <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
-        <!-- 月曆網格 -->
         <div id="calendar-grid" class="grid grid-cols-7 gap-1 mb-4"></div>
 
         <h3 class="font-bold text-slate-700 mb-2 border-b pb-1 text-sm">當月行程清單</h3>
@@ -493,58 +502,24 @@
 
   </main>
 
-  <!-- 長輩管理與排序 Modal -->
-  <div id="user-manage-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col gap-4">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-users-gear mr-1"></i> 長輩名單排序與管理</h3>
-        <button onclick="closeUserManageModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
-      </div>
-      <div id="user-manage-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto">
-        <!-- 動態列出長輩與上下移動按鈕 -->
-      </div>
-      <div class="flex gap-2">
-        <button onclick="closeUserManageModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow">完成儲存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 藥物照片大圖預覽 Modal -->
-  <div id="photo-preview-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" onclick="closePhotoModal()">
-    <div class="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl flex flex-col items-center gap-3 relative" onclick="event.stopPropagation()">
-      <button onclick="closePhotoModal()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl">&times;</button>
-      <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-capsules mr-1"></i> 藥物照片大圖</h3>
-      <img id="modal-img-tag" src="" class="w-full max-h-80 object-contain rounded-2xl border-2 border-emerald-200 shadow">
-      <button onclick="closePhotoModal()" class="w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow">關閉預覽</button>
-    </div>
-  </div>
-
   <script>
     const SHEETDB_API_URL = "https://sheetdb.io/api/v1/rd7b2ievscqzs";
 
-    const DEFAULT_USERS = ['媽咪', '王爺爺', '李奶奶'];
-    let currentActiveUser = '媽咪';
+    const DEFAULT_USERS = ['王爺爺', '李奶奶'];
+    let currentActiveUser = '王爺爺';
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
 
-    // 疼痛三階層狀態變數
-    let currentPainRegion = 'head'; // 'head', 'arm', 'leg', 'trunk'
-    let currentPainSide = '左側';    // '左側', '右側', '雙側', '中央'
-    let currentPainDetail = '頭頂';  // 具體細項
-    let selectedBodyZone = '頭臉 - 左側 頭頂';
+    // 三階部位選單狀態
+    let selectedRegion = 'head';
+    let selectedSide = '中央';
+    let selectedDetail = '頭頂';
 
-    const PAIN_DETAILS_MAP = {
-      head: ['頭部', '額頭', '太陽穴', '眼睛', '頭頂'],
-      arm: ['上臂', '下臂', '關節', '指節', '手腕'],
-      leg: ['大腿', '小腿', '膝蓋', '腳踝', '足底'],
-      trunk: ['上背', '下背', '腰']
-    };
-
-    const REGION_NAMES = {
-      head: '頭臉',
-      arm: '上肢',
-      leg: '下肢',
-      trunk: '軀幹背'
+    const BODY_PARTS_DATA = {
+      head: ['頭頂', '左右頭部', '額頭', '太陽穴', '眼睛', '臉頰', '後腦勺', '頸部'],
+      upper: ['肩頸', '肩膀', '手臂', '下臂', '手腕', '手掌', '指節', '肘關節'],
+      lower: ['臀部', '大腿', '小腿', '膝蓋', '腳踝', '足底', '腳趾'],
+      torso: ['胸口', '上腹部', '下腹部', '上背部', '下背部', '腰部', '肋骨兩側']
     };
 
     let viewDate = new Date();
@@ -555,10 +530,9 @@
       initUserSelect();
       loadCalendarColor();
       renderPainDetailButtons();
-      updateSelectedZoneText();
       loadUserData();
       initChart();
-      setInterval(updateCurrentTimeDueMeds, 30000); // 每 30 秒自動刷新當前時間提醒
+      startRealTimeClock();
     };
 
     function initDefaultDateTime() {
@@ -573,129 +547,31 @@
       document.getElementById('cal-time').value = "09:00";
     }
 
-    // === 長輩管理核心邏輯 ===
-    function getStoredUsers() {
-      let users = JSON.parse(localStorage.getItem('bp_user_list'));
-      if (!users || !Array.isArray(users) || users.length === 0) {
-        users = ['媽咪', '王爺爺', '李奶奶'];
-      }
-      if (!users.includes('媽咪')) {
-        users.unshift('媽咪');
-      }
-      return users;
-    }
-
-    function saveStoredUsers(users) {
-      localStorage.setItem('bp_user_list', JSON.stringify(users));
-    }
-
-    async function initUserSelect() {
-      let users = getStoredUsers();
-
-      // 從雲端自動抓取過去出現過的長輩名稱
-      try {
-        const res = await fetch(SHEETDB_API_URL);
-        const rows = await res.json();
-        if (Array.isArray(rows)) {
-          let updated = false;
-          rows.forEach(r => {
-            const u = r["長輩"];
-            if (u && typeof u === 'string' && u.trim() !== "" && !users.includes(u.trim())) {
-              users.push(u.trim());
-              updated = true;
-            }
-          });
-          if (updated) saveStoredUsers(users);
-        }
-      } catch(e) {}
-
-      renderUserSelectOptions(users);
-    }
-
-    function renderUserSelectOptions(users) {
-      if (!users) users = getStoredUsers();
+    function initUserSelect() {
+      let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
       const select = document.getElementById('user-select');
       select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
-
-      if (!currentActiveUser || !users.includes(currentActiveUser)) {
-        currentActiveUser = users[0] || '媽咪';
-      }
       select.value = currentActiveUser;
     }
 
     function switchUser(userName) {
-      if (!userName) return;
       currentActiveUser = userName;
       loadCalendarColor();
       loadUserData();
     }
 
     function promptAddUser() {
-      const name = prompt("請輸入新長輩的姓名或稱呼 (例：媽咪、張爺爺、陳奶奶)：");
+      const name = prompt("請輸入新長輩的姓名或稱呼 (例: 張爺爺):");
       if (name && name.trim() !== "") {
         const cleanName = name.trim();
-        let users = getStoredUsers();
+        let users = JSON.parse(localStorage.getItem('bp_user_list')) || DEFAULT_USERS;
         if (!users.includes(cleanName)) {
           users.push(cleanName);
-          saveStoredUsers(users);
+          localStorage.setItem('bp_user_list', JSON.stringify(users));
         }
         currentActiveUser = cleanName;
-        renderUserSelectOptions(users);
+        initUserSelect();
         loadCalendarColor();
-        loadUserData();
-        alert(`已成功切換至長輩：「${cleanName}」！`);
-      }
-    }
-
-    function openUserManageModal() {
-      const users = getStoredUsers();
-      const listEl = document.getElementById('user-manage-list');
-      if (!listEl) return;
-
-      listEl.innerHTML = users.map((u, idx) => `
-        <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl border border-slate-200">
-          <span class="font-black text-slate-800 text-sm">${u} ${u === '媽咪' ? '<span class="text-xs bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded ml-1">預設</span>' : ''}</span>
-          <div class="flex items-center gap-1">
-            ${idx > 0 ? `<button onclick="moveUser(${idx}, -1)" class="bg-white border text-slate-700 px-2 py-1 rounded text-xs font-bold">⬆️</button>` : ''}
-            ${idx < users.length - 1 ? `<button onclick="moveUser(${idx}, 1)" class="bg-white border text-slate-700 px-2 py-1 rounded text-xs font-bold">⬇️</button>` : ''}
-            ${users.length > 1 && u !== '媽咪' ? `<button onclick="removeUserItem('${u}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold ml-1">刪除</button>` : ''}
-          </div>
-        </div>
-      `).join('');
-
-      document.getElementById('user-manage-modal').classList.remove('hidden');
-    }
-
-    function closeUserManageModal() {
-      document.getElementById('user-manage-modal').classList.add('hidden');
-    }
-
-    function moveUser(index, direction) {
-      let users = getStoredUsers();
-      const targetIndex = index + direction;
-      if (targetIndex >= 0 && targetIndex < users.length) {
-        const temp = users[index];
-        users[index] = users[targetIndex];
-        users[targetIndex] = temp;
-        saveStoredUsers(users);
-        openUserManageModal();
-        renderUserSelectOptions(users);
-      }
-    }
-
-    function removeUserItem(userName) {
-      if (userName === '媽咪') {
-        alert("「媽咪」為預設核心長輩，不可刪除！");
-        return;
-      }
-      if (confirm(`確定要從列表選單移除長輩「${userName}」嗎？(歷史雲端資料仍會保留)`)) {
-        let users = getStoredUsers().filter(u => u !== userName);
-        saveStoredUsers(users);
-        if (currentActiveUser === userName) {
-          currentActiveUser = users[0] || '媽咪';
-        }
-        openUserManageModal();
-        renderUserSelectOptions(users);
         loadUserData();
       }
     }
@@ -793,12 +669,13 @@
       const pulse = parseInt(document.getElementById('val-pulse').innerText);
       const dateVal = document.getElementById('bp-date-input').value;
       const timeVal = document.getElementById('bp-time-input').value;
-      const timeStampStr = `${dateVal} ${timeVal}`;
+      const fullTimeStr = `${dateVal} ${timeVal}`;
 
       const record = {
         id: Date.now(),
         date: dateVal,
         time: timeVal,
+        fullTime: fullTimeStr,
         slot: currentSlot === 'morning' ? '早上' : '晚上',
         sys, dia, pulse
       };
@@ -812,7 +689,7 @@
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: [{
-            "時間": timeStampStr,
+            "時間": fullTimeStr,
             "長輩": currentActiveUser,
             "收縮壓": sys,
             "舒張壓": dia,
@@ -823,93 +700,70 @@
         })
       }).catch(err => console.log(err));
 
-      const isAbnormal = (sys >= 130 || dia >= 80 || sys < 90 || dia < 60);
       alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
       loadUserData();
-
-      if (isAbnormal) {
-        if (confirm("⚠️ 偵測到血壓數值異常（偏高或偏低），是否立即切換至【疼痛紀錄】頁面，記錄伴隨的不適現象或頭暈頭痛？")) {
-          switchTab('pain');
-        }
-      }
     }
 
-    function deleteBPRecord(id) {
-      if (confirm("確定要刪除這筆血壓紀錄嗎？")) {
+    // 同步刪除功能（連同 Sheet 表對應數據）
+    async function deleteBPRecord(id, fullTime) {
+      if (confirm("確定要刪除這筆血壓紀錄嗎？將同時從雲端 Sheet 表刪除。")) {
         let records = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
-        const target = records.find(r => r.id === id);
         records = records.filter(r => r.id !== id);
         localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(records));
 
-        if (target && target.date && target.time) {
-          const timeStampStr = `${target.date} ${target.time}`;
-          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(timeStampStr)}`, {
-            method: "DELETE",
+        if (fullTime) {
+          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(fullTime)}`, {
+            method: 'DELETE',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-          }).catch(err => console.log("Cloud delete err:", err));
+          }).catch(err => console.log("Sheet delete error:", err));
         }
 
         loadUserData();
       }
     }
 
-    // 疼痛三階層選擇邏輯 (區域 -> 左右側 -> 細項)
-    function selectPainRegion(region) {
-      currentPainRegion = region;
-      const details = PAIN_DETAILS_MAP[region];
-      currentPainDetail = details[0];
-
-      ['head', 'arm', 'leg', 'trunk'].forEach(r => {
-        const btn = document.getElementById(`region-btn-${r}`);
-        if (r === region) {
-          btn.className = "body-region-btn bg-emerald-600 text-white border-2 border-emerald-700 py-2 rounded-xl text-xs font-black shadow-sm";
-        } else {
-          btn.className = "body-region-btn bg-white border-2 border-slate-300 text-slate-800 py-2 rounded-xl text-xs font-black shadow-sm";
-        }
+    /* ---------------- 三階部位選擇邏輯 ---------------- */
+    function setPainRegion(reg) {
+      selectedRegion = reg;
+      ['head', 'upper', 'lower', 'torso'].forEach(r => {
+        const btn = document.getElementById(`btn-region-${r}`);
+        if (r === reg) btn.classList.add('active'); else btn.classList.remove('active');
       });
-
       renderPainDetailButtons();
-      updateSelectedZoneText();
     }
 
-    function selectPainSide(side) {
-      currentPainSide = side;
-
-      ['left', 'right', 'both', 'center'].forEach(s => {
-        const sideNameMap = { left: '左側', right: '右側', both: '雙側', center: '中央' };
-        const btn = document.getElementById(`side-btn-${s}`);
-        if (sideNameMap[s] === side) {
-          btn.className = "body-side-btn bg-slate-800 text-white border-2 border-slate-900 py-1.5 rounded-xl text-xs font-black";
-        } else {
-          btn.className = "body-side-btn bg-white border-2 border-slate-300 text-slate-800 py-1.5 rounded-xl text-xs font-black";
-        }
+    function setPainSide(side) {
+      selectedSide = side;
+      const sides = {'左側': 'left', '右側': 'right', '雙側': 'both', '中央': 'center'};
+      Object.keys(sides).forEach(s => {
+        const btn = document.getElementById(`btn-side-${sides[s]}`);
+        if (s === side) btn.classList.add('active'); else btn.classList.remove('active');
       });
-
-      updateSelectedZoneText();
-    }
-
-    function selectPainDetail(detail) {
-      currentPainDetail = detail;
-      renderPainDetailButtons();
-      updateSelectedZoneText();
+      updatePainZoneText();
     }
 
     function renderPainDetailButtons() {
+      const details = BODY_PARTS_DATA[selectedRegion] || [];
+      selectedDetail = details[0] || '';
       const container = document.getElementById('pain-detail-container');
-      const details = PAIN_DETAILS_MAP[currentPainRegion];
-      container.innerHTML = details.map(d => {
-        const isSelected = d === currentPainDetail;
-        return `
-          <button type="button" onclick="selectPainDetail('${d}')" class="py-2 px-1 rounded-xl text-xs font-black transition-all ${
-            isSelected ? 'bg-red-500 text-white border-2 border-red-700 scale-105 shadow-md' : 'bg-slate-50 text-slate-700 border border-slate-200'
-          }">${d}</button>
-        `;
-      }).join('');
+      container.innerHTML = details.map((d, idx) => `
+        <button type="button" onclick="setPainDetail('${d}')" class="detail-btn bg-white border border-rose-200 text-rose-950 p-2 rounded-xl text-xs font-black ${idx === 0 ? 'active' : ''}">${d}</button>
+      `).join('');
+      updatePainZoneText();
     }
 
-    function updateSelectedZoneText() {
-      selectedBodyZone = `${REGION_NAMES[currentPainRegion]} - ${currentPainSide} ${currentPainDetail}`;
-      document.getElementById('selected-zone-text').innerText = selectedBodyZone;
+    function setPainDetail(d) {
+      selectedDetail = d;
+      const btns = document.querySelectorAll('.detail-btn');
+      btns.forEach(b => {
+        if (b.innerText === d) b.classList.add('active'); else b.classList.remove('active');
+      });
+      updatePainZoneText();
+    }
+
+    function updatePainZoneText() {
+      const fullText = `${selectedSide} ${selectedDetail}`;
+      document.getElementById('selected-zone-text').innerText = fullText;
     }
 
     function updatePainDisplay(score) {
@@ -933,31 +787,38 @@
       const score = document.getElementById('pain-score').value;
       const type = document.getElementById('pain-type').value;
       const freq = document.getElementById('pain-freq').value;
+      const method = document.getElementById('pain-method').value;
+      const chosenMed = document.getElementById('pain-med-select').value;
       const relief = document.getElementById('pain-relief').value;
+      
       const dateVal = document.getElementById('pain-date-input').value;
       const timeVal = document.getElementById('pain-time-input').value;
-      const timeStampStr = `${dateVal} ${timeVal}`;
+      const fullTimeStr = `${dateVal} ${timeVal}`;
+
+      const zoneStr = `${selectedSide} ${selectedDetail}`;
 
       const painRec = {
         id: Date.now(),
-        date: dateVal, time: timeVal,
-        part: selectedBodyZone, score, type, freq, relief
+        date: dateVal, time: timeVal, fullTime: fullTimeStr,
+        part: zoneStr, score, type, freq, method, chosenMed, relief
       };
 
       let pains = JSON.parse(localStorage.getItem(`pain_${currentActiveUser}`)) || [];
       pains.unshift(painRec);
       localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(pains));
 
+      const noteText = `部位:${zoneStr}, 分數:${score}分(${type}), 頻率:${freq}, 改善處置:${method}, 搭配用藥:${chosenMed}, 結果:${relief}`;
+
       fetch(SHEETDB_API_URL, {
         method: "POST",
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: [{
-            "時間": timeStampStr,
+            "時間": fullTimeStr,
             "長輩": currentActiveUser,
             "收縮壓": 0, "舒張壓": 0, "脈搏": 0,
             "時段": "疼痛紀錄",
-            "備註": `部位:${selectedBodyZone}, 分數:${score}分(${type}), 頻率:${freq}, 改善:${relief}`
+            "備註": noteText
           }]
         })
       }).catch(err => console.log(err));
@@ -966,56 +827,56 @@
       loadUserData();
     }
 
-    function deletePainRecord(id) {
-      if (confirm("確定要刪除這筆疼痛紀錄嗎？")) {
+    async function deletePainRecord(id, fullTime) {
+      if (confirm("確定要刪除這筆疼痛紀錄嗎？將同時從雲端 Sheet 表刪除。")) {
         let pains = JSON.parse(localStorage.getItem(`pain_${currentActiveUser}`)) || [];
-        const target = pains.find(p => p.id === id);
         pains = pains.filter(p => p.id !== id);
         localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(pains));
 
-        if (target && target.date && target.time) {
-          const timeStampStr = `${target.date} ${target.time}`;
-          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(timeStampStr)}`, {
-            method: "DELETE",
+        if (fullTime) {
+          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(fullTime)}`, {
+            method: 'DELETE',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-          }).catch(err => console.log("Cloud delete err:", err));
+          }).catch(err => console.log(err));
         }
 
         loadUserData();
       }
     }
 
-    function getSelectedMedTimes() {
-      const checkboxes = document.querySelectorAll('.med-time-checkbox:checked');
-      return Array.from(checkboxes).map(cb => cb.value);
-    }
-
+    /* ---------------- 用藥與複選 ---------------- */
     function addMedication() {
       const name = document.getElementById('med-name').value.trim();
-      const selectedTimes = getSelectedMedTimes();
       const note = document.getElementById('med-note').value.trim();
       const photoInput = document.getElementById('med-photo-input');
+
+      // 取得複選的用藥時段
+      const checkedSlots = [];
+      for(let i=1; i<=8; i++) {
+        const el = document.getElementById(`m-slot-${i}`);
+        if (el && el.checked) checkedSlots.push(el.value);
+      }
       
       if (!name) { alert("請輸入藥物名稱！"); return; }
-      if (selectedTimes.length === 0) { alert("請至少勾選一個服藥餐別時段！"); return; }
+      if (checkedSlots.length === 0) { alert("請至少選擇一個服藥餐別時段！"); return; }
 
-      const timeStr = selectedTimes.join(', ');
+      const timeSlotStr = checkedSlots.join(', ');
 
       if (photoInput.files && photoInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          saveMedObj(name, timeStr, note, e.target.result);
+          saveMedObj(name, timeSlotStr, note, e.target.result);
         };
         reader.readAsDataURL(photoInput.files[0]);
       } else {
-        saveMedObj(name, timeStr, note, '');
+        saveMedObj(name, timeSlotStr, note, '');
       }
     }
 
     function saveMedObj(name, time, note, photo) {
       const recordTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
       let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      const newMed = { id: Date.now(), recordTime, name, time, note, photo };
+      const newMed = { id: Date.now(), name, time, note, photo, fullTime: recordTime };
       meds.push(newMed);
       localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
 
@@ -1032,111 +893,55 @@
           }]
         })
       }).catch(err => console.log(err));
-      
+
       document.getElementById('med-name').value = '';
       document.getElementById('med-note').value = '';
       document.getElementById('med-photo-input').value = '';
-      document.querySelectorAll('.med-time-checkbox').forEach(cb => cb.checked = false);
+      for(let i=1; i<=8; i++) {
+        const el = document.getElementById(`m-slot-${i}`);
+        if(el) el.checked = false;
+      }
 
       alert("成功新增並同步用藥提醒！");
       loadUserData();
     }
 
-    function deleteMedication(id) {
-      if (confirm("確定要刪除這筆用藥提醒嗎？")) {
+    async function deleteMedication(id, fullTime) {
+      if (confirm("確定要刪除這項用藥提醒嗎？")) {
         let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-        const target = meds.find(m => m.id === id);
         meds = meds.filter(m => m.id !== id);
         localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(meds));
 
-        if (target && target.name) {
-          fetch(`${SHEETDB_API_URL}/備註/*${encodeURIComponent(target.name)}*`, {
-            method: "DELETE",
+        if (fullTime) {
+          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(fullTime)}`, {
+            method: 'DELETE',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-          }).catch(err => console.log("Cloud delete err:", err));
+          }).catch(err => console.log(err));
         }
 
         loadUserData();
       }
     }
 
-    function updateCurrentTimeDueMeds() {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const timeStr = `${hours}:${minutes}`;
-
-      let activeSlots = [];
-      let activeDesc = "";
-
-      if (hours >= 5 && hours < 9) {
-        activeSlots = ['🌅 早餐前', '🥞 早餐後'];
-        activeDesc = "🌅 早餐時段";
-      } else if (hours >= 9 && hours < 11) {
-        activeSlots = ['🥞 早餐後', '☀️ 午餐前'];
-        activeDesc = "☀️ 上午時段";
-      } else if (hours >= 11 && hours < 14) {
-        activeSlots = ['☀️ 午餐前', '🍱 午餐後'];
-        activeDesc = "🍱 午餐時段";
-      } else if (hours >= 14 && hours < 17) {
-        activeSlots = ['🍱 午餐後', '🌆 晚餐前'];
-        activeDesc = "🌆 下午時段";
-      } else if (hours >= 17 && hours < 20) {
-        activeSlots = ['🌆 晚餐前', '🍲 晚餐後'];
-        activeDesc = "🍲 晚餐時段";
-      } else {
-        activeSlots = ['🌙 睡前'];
-        activeDesc = "🌙 晚間/睡前時段";
-      }
-
-      document.getElementById('current-time-display').innerText = `手機時間：${timeStr} | 當前：${activeDesc}`;
-
-      const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      const dueContainer = document.getElementById('due-meds-container');
-
-      const dueMeds = meds.filter(m => {
-        if (!m.time) return false;
-        return activeSlots.some(slot => m.time.includes(slot));
-      });
-
-      if (dueMeds.length === 0) {
-        dueContainer.innerHTML = `
-          <div class="bg-white p-3 rounded-2xl text-center text-sm font-bold text-slate-500 border border-amber-200">
-            🟢 當前時段沒有排定的固定服藥提醒
-          </div>
-        `;
-      } else {
-        dueContainer.innerHTML = dueMeds.map(m => `
-          <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3">
-            <div class="flex-1">
-              <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full">${m.time}</span>
-              <div class="font-black text-slate-900 text-lg mt-1 flex items-center gap-1.5">
-                <i class="fa-solid fa-capsules text-red-500"></i> ${m.name}
-              </div>
-              <div class="text-xs text-amber-900 font-bold mt-0.5"><i class="fa-solid fa-circle-info mr-1"></i>${m.note || '遵照醫囑服用'}</div>
-            </div>
-            ${m.photo ? `<img src="${m.photo}" class="w-14 h-14 object-cover rounded-xl border-2 border-amber-300">` : ''}
-          </div>
-        `).join('');
-      }
-    }
-
+    /* ---------------- 行事曆 ---------------- */
     function changeMonth(delta) {
       viewDate.setMonth(viewDate.getMonth() + delta);
       loadUserData();
+    }
+
+    function changeCalendarColor(color) {
+      currentCalendarColor = color;
+      localStorage.setItem(`cal_color_${currentActiveUser}`, color);
+      renderMonthlyCalendar();
     }
 
     function loadCalendarColor() {
       const savedColor = localStorage.getItem(`cal_color_${currentActiveUser}`);
       if (savedColor) {
         currentCalendarColor = savedColor;
+        const colorInput = document.getElementById('cal-theme-color');
+        if (colorInput) colorInput.value = savedColor;
       }
-    }
-
-    let selectedCalColor = '#3b82f6';
-    function selectEventColor(color) {
-      selectedCalColor = color;
-      document.getElementById('cal-event-color').value = color;
     }
 
     function addCalendarEvent() {
@@ -1144,13 +949,12 @@
       const date = document.getElementById('cal-date').value;
       const time = document.getElementById('cal-time').value;
       const note = document.getElementById('cal-note').value.trim();
-      const color = document.getElementById('cal-event-color').value || selectedCalColor;
-      const timeStampStr = `${date} ${time || '00:00'}`;
+      const fullTimeStr = `${date} ${time || '00:00'}`;
 
       if (!title || !date) { alert("請填寫行程名稱與日期！"); return; }
 
       let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
-      const newEvt = { id: Date.now(), title, date, time, note, color };
+      const newEvt = { id: Date.now(), title, date, time, note, fullTime: fullTimeStr };
       events.push(newEvt);
       events.sort((a,b) => new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')));
       localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(events));
@@ -1160,11 +964,11 @@
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: [{
-            "時間": timeStampStr,
+            "時間": fullTimeStr,
             "長輩": currentActiveUser,
             "收縮壓": 0, "舒張壓": 0, "脈搏": 0,
             "時段": "行事曆行程",
-            "備註": `行程:${title}, 顏色:${color}, 備註:${note}`
+            "備註": `行程:${title}, 備註:${note}`
           }]
         })
       }).catch(err => console.log(err));
@@ -1175,61 +979,24 @@
       loadUserData();
     }
 
-    function deleteCalendarEvent(id) {
-      if (confirm("確定要刪除這筆看診行程嗎？")) {
+    async function deleteCalendarEvent(id, fullTime) {
+      if (confirm("確定要刪除這筆看診行程嗎？將同時從雲端 Sheet 表刪除。")) {
         let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
-        const target = events.find(e => e.id === id);
         events = events.filter(e => e.id !== id);
         localStorage.setItem(`cal_${currentActiveUser}`, JSON.stringify(events));
 
-        if (target && target.date) {
-          const timeStampStr = `${target.date} ${target.time || '00:00'}`;
-          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(timeStampStr)}`, {
-            method: "DELETE",
+        if (fullTime) {
+          fetch(`${SHEETDB_API_URL}/時間/${encodeURIComponent(fullTime)}`, {
+            method: 'DELETE',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-          }).catch(err => console.log("Cloud delete err:", err));
+          }).catch(err => console.log(err));
         }
 
         loadUserData();
       }
     }
 
-    function updatePainReliefOptions() {
-      const select = document.getElementById('pain-relief');
-      if (!select) return;
-      
-      let meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      
-      let htmlOptions = `
-        <option value="🟢 顯著改善 (疼痛大減)">🟢 顯著改善 (疼痛大減)</option>
-        <option value="🟡 稍微減輕 (比較舒服)">🟡 稍微減輕 (比較舒服)</option>
-        <option value="🔴 沒有改善 (依然很痛)">🔴 沒有改善 (依然很痛)</option>
-        <option value="🛌 躺下休息 / 閉眼小睡">🛌 躺下休息 / 閉眼小睡</option>
-        <option value="💧 多喝溫開水休息">💧 多喝溫開水休息</option>
-        <option value="❄️ 局部冰敷 / 熱敷緩解">❄️ 局部冰敷 / 熱敷緩解</option>
-      `;
-
-      if (meds.length > 0) {
-        htmlOptions += `<optgroup label="💊 從家人藥物中選取止痛/常備藥">`;
-        meds.forEach(m => {
-          htmlOptions += `<option value="💊 服用 ${m.name}">💊 服用 ${m.name} (${m.time})</option>`;
-        });
-        htmlOptions += `</optgroup>`;
-      }
-
-      htmlOptions += `<option value="⚪ 尚未處理">⚪ 尚未處理</option>`;
-      select.innerHTML = htmlOptions;
-    }
-
-    function openPhotoModal(src) {
-      document.getElementById('modal-img-tag').src = src;
-      document.getElementById('photo-preview-modal').classList.remove('hidden');
-    }
-
-    function closePhotoModal() {
-      document.getElementById('photo-preview-modal').classList.add('hidden');
-    }
-
+    /* ---------------- 雲端數據同步與渲染 ---------------- */
     async function loadUserData() {
       try {
         const res = await fetch(SHEETDB_API_URL);
@@ -1238,10 +1005,12 @@
           const userRows = rows.filter(r => r["長輩"] === currentActiveUser);
           
           if (userRows.length > 0) {
+            // 1. 同步血壓
             const cloudBp = userRows.filter(r => r["時段"] === "早上" || r["時段"] === "晚上" || r["時段"] === "血壓紀錄").map((r, idx) => ({
               id: idx + 1000,
               date: r["時間"] ? r["時間"].split(' ')[0] : '',
               time: r["時間"] ? r["時間"].split(' ')[1] : '',
+              fullTime: r["時間"] || '',
               slot: (r["時段"] === "早上" || r["時段"] === "晚上") ? r["時段"] : '早上',
               sys: parseInt(r["收縮壓"]) || 120,
               dia: parseInt(r["舒張壓"]) || 80,
@@ -1249,42 +1018,49 @@
             })).reverse();
             if (cloudBp.length > 0) localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
 
+            // 2. 同步疼痛紀錄
             const cloudPain = userRows.filter(r => r["時段"] === "疼痛紀錄").map((r, idx) => {
               const noteStr = r["備註"] || "";
               return {
                 id: idx + 2000,
                 date: r["時間"] ? r["時間"].split(' ')[0] : '',
                 time: r["時間"] ? r["時間"].split(' ')[1] : '',
-                part: noteStr.match(/部位:([^,]+)/)?.[1] || '頭頂',
+                fullTime: r["時間"] || '',
+                part: noteStr.match(/部位:([^,]+)/)?.[1] || '中央 頭頂',
                 score: noteStr.match(/分數:(\d+)/)?.[1] || '1',
                 type: noteStr.match(/\((.*?)\)/)?.[1] || '抽痛',
                 freq: noteStr.match(/頻率:([^,]+)/)?.[1] || '偶爾發生',
-                relief: noteStr.match(/改善:(.+)/)?.[1] || '尚未服藥'
+                method: noteStr.match(/改善處置:([^,]+)/)?.[1] || '未處置',
+                chosenMed: noteStr.match(/搭配用藥:([^,]+)/)?.[1] || '無',
+                relief: noteStr.match(/結果:(.+)/)?.[1] || '觀察中'
               };
             }).reverse();
             if (cloudPain.length > 0) localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(cloudPain));
 
+            // 3. 同步用藥提醒
             const cloudMeds = userRows.filter(r => r["時段"] === "用藥紀錄").map((r, idx) => {
               const noteStr = r["備註"] || "";
               return {
                 id: idx + 3000,
                 name: noteStr.match(/藥名:([^,]+)/)?.[1] || '常備藥',
-                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '🥞 早餐後',
+                time: noteStr.match(/服用時段:([^,]+)/)?.[1] || '早餐後',
                 note: noteStr.match(/備註:(.+)/)?.[1] || '',
+                fullTime: r["時間"] || '',
                 photo: ''
               };
             });
             if (cloudMeds.length > 0) localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(cloudMeds));
 
+            // 4. 同步看診行事曆
             const cloudCal = userRows.filter(r => r["時段"] === "行事曆行程").map((r, idx) => {
               const noteStr = r["備註"] || "";
               const dt = r["時間"] || "";
               return {
                 id: idx + 4000,
                 title: noteStr.match(/行程:([^,]+)/)?.[1] || '回診行程',
-                color: noteStr.match(/顏色:([^,]+)/)?.[1] || '#3b82f6',
                 date: dt.split(' ')[0] || '',
                 time: dt.split(' ')[1] || '',
+                fullTime: dt,
                 note: noteStr.match(/備註:(.+)/)?.[1] || ''
               };
             });
@@ -1304,7 +1080,7 @@
               ${r.sys} / ${r.dia} <span class="text-xs text-slate-500 font-normal">mmHg (脈搏:${r.pulse})</span>
             </div>
           </div>
-          <button onclick="deleteBPRecord(${r.id})" class="text-red-500 hover:text-red-700 px-2.5 py-1 text-xs font-bold bg-red-50 rounded-lg border border-red-200">刪除</button>
+          <button onclick="deleteBPRecord(${r.id}, '${r.fullTime||''}')" class="text-red-500 hover:text-red-700 px-2.5 py-1 text-xs font-bold bg-red-50 rounded-lg border border-red-200">刪除</button>
         </div>
       `).join('');
 
@@ -1315,35 +1091,185 @@
         <div class="p-3 bg-slate-50 rounded-xl border flex flex-col gap-1 text-sm">
           <div class="flex justify-between font-bold text-slate-700">
             <span>${p.date} ${p.time}</span>
-            <span class="text-red-600">${p.part}</span>
+            <span class="text-red-600 font-black">${p.part}</span>
           </div>
-          <div class="font-black text-slate-900">疼痛：${p.score}分 (${p.type})</div>
-          <div class="text-xs text-slate-600">頻率：${p.freq} | 改善：${p.relief}</div>
-          <div class="flex justify-end">
-            <button onclick="deletePainRecord(${p.id})" class="text-red-500 hover:text-red-700 px-2.5 py-1 text-xs font-bold bg-red-50 rounded-lg border border-red-200">刪除</button>
+          <div class="font-black text-slate-900">程度：${p.score}分 (${p.type})</div>
+          <div class="text-xs text-slate-600">處置：${p.method || '未填'} ${p.chosenMed && p.chosenMed !== '無/未服藥' ? '| 藥物:'+p.chosenMed : ''}</div>
+          <div class="flex justify-between items-center mt-1 pt-1 border-t border-slate-200 text-xs">
+            <span class="font-bold text-emerald-700">結果：${p.relief}</span>
+            <button onclick="deletePainRecord(${p.id}, '${p.fullTime||''}')" class="text-red-500 font-bold bg-white px-2 py-0.5 rounded border border-red-200">刪除</button>
           </div>
         </div>
       `).join('');
 
-      // 渲染用藥提醒
-      const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
-      const medList = document.getElementById('med-list');
-      medList.innerHTML = meds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無用藥提醒</div>' : meds.map(m => `
-        <div class="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200 flex items-center justify-between gap-3 shadow-sm">
-          <div class="flex-1">
-            <span class="bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-full">${m.time}</span>
-            <div class="font-black text-emerald-950 text-lg mt-1.5">${m.name}</div>
-            <div class="text-xs text-emerald-800 font-bold mt-1"><i class="fa-solid fa-circle-info mr-1"></i>${m.note || '遵照醫囑服用'}</div>
-          </div>
-          ${m.photo ? `<div onclick="openPhotoModal('${m.photo}')" class="cursor-pointer group relative"><img src="${m.photo}" class="w-24 h-24 object-cover rounded-2xl border-4 border-emerald-300 shadow-md transition group-hover:scale-105" title="點擊放大圖片"><span class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">🔍 放大</span></div>` : ''}
-          <button onclick="deleteMedication(${m.id})" class="text-red-500 text-xs font-bold bg-white px-3 py-2 rounded-xl border border-red-200 shadow-sm ml-1">刪除</button>
-        </div>
-      `).join('');
-
-      updatePainReliefOptions();
-      updateCurrentTimeDueMeds();
+      // 渲染用藥與疼痛頁面藥物下拉選單
+      renderMedicationLists();
       renderMonthlyCalendar();
       updateChart(bpRecords);
     }
 
-    function renderMonthlyCalendar()
+    /* ---------------- 依據時間直觀呈現用藥 ---------------- */
+    function renderMedicationLists() {
+      const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
+      
+      // 更新疼痛紀錄裡的藥物下拉選單
+      const painMedSelect = document.getElementById('pain-med-select');
+      painMedSelect.innerHTML = '<option value="無/未服藥">無 / 未服藥</option>' + 
+        meds.map(m => `<option value="${m.name}">${m.name} (${m.time})</option>`).join('');
+
+      // 分離「一般定時藥物」與「需要時(備用)」
+      const regularMeds = meds.filter(m => !m.time.includes('需要時'));
+      const asNeededMeds = meds.filter(m => m.time.includes('需要時'));
+
+      // 渲染定時藥物
+      const medList = document.getElementById('med-list');
+      medList.innerHTML = regularMeds.length === 0 ? '<div class="text-gray-400 text-center py-3">尚無定時用藥提醒</div>' : regularMeds.map(m => `
+        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-3">
+          <div class="flex-1">
+            <span class="bg-emerald-600 text-white font-bold text-[11px] px-2 py-0.5 rounded-full">${m.time}</span>
+            <div class="font-black text-emerald-950 text-base mt-1">${m.name}</div>
+            <div class="text-xs text-emerald-700 font-bold mt-0.5">${m.note || '遵照醫囑服用'}</div>
+          </div>
+          ${m.photo ? `<img src="${m.photo}" class="w-16 h-16 object-cover rounded-xl border-2 border-emerald-300 shadow-sm">` : ''}
+          <button onclick="deleteMedication(${m.id}, '${m.fullTime||''}')" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200 ml-1">刪除</button>
+        </div>
+      `).join('');
+
+      // 渲染備用藥物（不置頂）
+      const asNeededList = document.getElementById('asneeded-med-list');
+      asNeededList.innerHTML = asNeededMeds.length === 0 ? '<div class="text-gray-400 text-center py-2 text-sm">尚無備用藥物</div>' : asNeededMeds.map(m => `
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between gap-3">
+          <div class="flex-1">
+            <span class="bg-amber-600 text-white font-bold text-[11px] px-2 py-0.5 rounded-full">⚡ 備用藥物</span>
+            <div class="font-black text-amber-950 text-base mt-1">${m.name}</div>
+            <div class="text-xs text-amber-800 font-bold mt-0.5">${m.note || '發作或需要時服用'}</div>
+          </div>
+          ${m.photo ? `<img src="${m.photo}" class="w-14 h-14 object-cover rounded-xl border-2 border-amber-300 shadow-sm">` : ''}
+          <button onclick="deleteMedication(${m.id}, '${m.fullTime||''}')" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200 ml-1">刪除</button>
+        </div>
+      `).join('');
+
+      updateActiveMedDisplay(meds);
+    }
+
+    function startRealTimeClock() {
+      setInterval(() => {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('current-phone-time').innerText = `${hours}:${minutes}`;
+
+        const meds = JSON.parse(localStorage.getItem(`med_${currentActiveUser}`)) || [];
+        updateActiveMedDisplay(meds);
+      }, 1000);
+    }
+
+    function updateActiveMedDisplay(meds) {
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      let slotKey = '';
+      let slotName = '';
+
+      if (currentHour >= 5 && currentHour < 10) {
+        slotKey = '早餐'; slotName = '🌅 早餐時段';
+      } else if (currentHour >= 10 && currentHour < 14) {
+        slotKey = '午餐'; slotName = '☀️ 午餐時段';
+      } else if (currentHour >= 14 && currentHour < 20) {
+        slotKey = '晚餐'; slotName = '🌆 晚餐時段';
+      } else {
+        slotKey = '睡前'; slotName = '🌙 睡前時段';
+      }
+
+      document.getElementById('current-meal-slot').innerText = slotName;
+
+      // 篩選當前時間對應的藥物 (排除備用藥)
+      const currentMeds = meds.filter(m => m.time.includes(slotKey) && !m.time.includes('需要時'));
+
+      const activeBox = document.getElementById('active-med-box');
+      if (currentMeds.length === 0) {
+        activeBox.innerHTML = `<div class="text-sm font-bold text-emerald-100">✨ 當前時段（${slotName}）目前沒有需要服用的常規藥物。</div>`;
+      } else {
+        activeBox.innerHTML = currentMeds.map(m => `
+          <div class="bg-white/20 p-2.5 rounded-xl border border-white/40 flex items-center justify-between">
+            <div>
+              <div class="font-black text-white text-base">${m.name}</div>
+              <div class="text-xs text-amber-100 font-bold">${m.time} | ${m.note || '按時服藥'}</div>
+            </div>
+            ${m.photo ? `<img src="${m.photo}" class="w-10 h-10 object-cover rounded-lg">` : '<i class="fa-solid fa-pills text-2xl text-amber-200"></i>'}
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderMonthlyCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
+
+      let gridHtml = '';
+      for (let i = 0; i < firstDayIndex; i++) {
+        gridHtml += `<div class="h-14 bg-slate-50/50 rounded-lg"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateStr = `${year}-${mm}-${dd}`;
+        const hasEvent = events.some(e => e.date === dateStr);
+
+        gridHtml += `
+          <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
+            <span class="text-xs font-black text-slate-700">${day}</span>
+            ${hasEvent ? `<span class="w-2.5 h-2.5 rounded-full animate-pulse mb-1" style="background-color: ${currentCalendarColor};"></span>` : ''}
+          </div>
+        `;
+      }
+      document.getElementById('calendar-grid').innerHTML = gridHtml;
+
+      const monthEvents = events.filter(e => {
+        const [eY, eM] = e.date.split('-');
+        return parseInt(eY) === year && parseInt(eM) === (month + 1);
+      });
+
+      const calList = document.getElementById('calendar-list');
+      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => `
+        <div class="p-3.5 rounded-2xl border flex justify-between items-start" style="background-color: ${currentCalendarColor}10; border-color: ${currentCalendarColor}40;">
+          <div>
+            <div class="text-xs font-bold" style="color: ${currentCalendarColor};"><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</div>
+            <div class="text-base font-black text-slate-900 mt-0.5">${e.title}</div>
+            <div class="text-xs text-slate-600 mt-1 font-bold">備註：${e.note || '無'}</div>
+          </div>
+          <button onclick="deleteCalendarEvent(${e.id}, '${e.fullTime||''}')" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
+        </div>
+      `).join('');
+    }
+
+    let bpChart;
+    function initChart() {
+      const ctx = document.getElementById('bpChart').getContext('2d');
+      bpChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function updateChart(records) {
+      if (!bpChart) return;
+      const recent = [...records].reverse().slice(-14);
+      bpChart.data.labels = recent.map(r => `${r.date.slice(5)} ${r.slot}`);
+      bpChart.data.datasets = [
+        { label: '收縮壓 (mmHg)', data: recent.map(r => r.sys), borderColor: '#ef4444', backgroundColor: '#ef444420', tension: 0.2 },
+        { label: '舒張壓 (mmHg)', data: recent.map(r => r.dia), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.2 }
+      ];
+      bpChart.update();
+    }
+  </script>
+</body>
+</html>
