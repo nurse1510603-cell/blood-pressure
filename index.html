@@ -340,7 +340,7 @@
     <!-- 3. 用藥提醒頁籤 (支援複選餐別與即時提醒) -->
     <section id="tab-med" class="flex flex-col gap-6 hidden">
 
-      <!-- ⏰ 直觀時間提醒卡片：長輩開啟即可看到現在該吃什麼藥 -->
+      <!-- ⏰ 直觀時間提醒卡片 -->
       <div class="bg-amber-50 rounded-3xl p-5 shadow-lg border-2 border-amber-300">
         <div class="flex justify-between items-center border-b-2 border-amber-200 pb-2 mb-3">
           <div class="flex items-center gap-2">
@@ -387,7 +387,7 @@
                 <label for="med-time-l-after" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🍱 午餐後</label>
               </div>
               <div>
-                <input type="checkbox" id="med-time-d-before" value="<ctrl42> 晚餐前" class="hidden med-time-checkbox">
+                <input type="checkbox" id="med-time-d-before" value="🌆 晚餐前" class="hidden med-time-checkbox">
                 <label for="med-time-d-before" class="block text-center p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">🌆 晚餐前</label>
               </div>
               <div>
@@ -493,11 +493,37 @@
 
   </main>
 
+  <!-- 長輩管理與排序 Modal -->
+  <div id="user-manage-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-users-gear mr-1"></i> 長輩名單排序與管理</h3>
+        <button onclick="closeUserManageModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+      <div id="user-manage-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+        <!-- 動態列出長輩與上下移動按鈕 -->
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeUserManageModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow">完成儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 藥物照片大圖預覽 Modal -->
+  <div id="photo-preview-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" onclick="closePhotoModal()">
+    <div class="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl flex flex-col items-center gap-3 relative" onclick="event.stopPropagation()">
+      <button onclick="closePhotoModal()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl">&times;</button>
+      <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-capsules mr-1"></i> 藥物照片大圖</h3>
+      <img id="modal-img-tag" src="" class="w-full max-h-80 object-contain rounded-2xl border-2 border-emerald-200 shadow">
+      <button onclick="closePhotoModal()" class="w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow">關閉預覽</button>
+    </div>
+  </div>
+
   <script>
     const SHEETDB_API_URL = "https://sheetdb.io/api/v1/rd7b2ievscqzs";
 
-    const DEFAULT_USERS = ['王爺爺', '李奶奶'];
-    let currentActiveUser = '王爺爺';
+    const DEFAULT_USERS = ['媽咪', '王爺爺', '李奶奶'];
+    let currentActiveUser = '媽咪';
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
 
@@ -547,24 +573,39 @@
       document.getElementById('cal-time').value = "09:00";
     }
 
-        async function initUserSelect() {
-      let users = JSON.parse(localStorage.getItem('bp_user_list')) || ['媽咪', ...DEFAULT_USERS];
+    // === 長輩管理核心邏輯 ===
+    function getStoredUsers() {
+      let users = JSON.parse(localStorage.getItem('bp_user_list'));
+      if (!users || !Array.isArray(users) || users.length === 0) {
+        users = ['媽咪', '王爺爺', '李奶奶'];
+      }
       if (!users.includes('媽咪')) {
         users.unshift('媽咪');
       }
+      return users;
+    }
 
-      // 自動從雲端抓取所有出現過的長輩名稱 (如 '媽咪')
+    function saveStoredUsers(users) {
+      localStorage.setItem('bp_user_list', JSON.stringify(users));
+    }
+
+    async function initUserSelect() {
+      let users = getStoredUsers();
+
+      // 從雲端自動抓取過去出現過的長輩名稱
       try {
         const res = await fetch(SHEETDB_API_URL);
         const rows = await res.json();
         if (Array.isArray(rows)) {
+          let updated = false;
           rows.forEach(r => {
             const u = r["長輩"];
             if (u && typeof u === 'string' && u.trim() !== "" && !users.includes(u.trim())) {
               users.push(u.trim());
+              updated = true;
             }
           });
-          localStorage.setItem('bp_user_list', JSON.stringify(users));
+          if (updated) saveStoredUsers(users);
         }
       } catch(e) {}
 
@@ -572,27 +613,89 @@
     }
 
     function renderUserSelectOptions(users) {
-      if (!users || users.length === 0) users = ['媽咪', '王爺爺', '李奶奶'];
+      if (!users) users = getStoredUsers();
       const select = document.getElementById('user-select');
       select.innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
-      if (!users.includes(currentActiveUser)) {
-        currentActiveUser = users[0];
+
+      if (!currentActiveUser || !users.includes(currentActiveUser)) {
+        currentActiveUser = users[0] || '媽咪';
       }
       select.value = currentActiveUser;
     }
 
+    function switchUser(userName) {
+      if (!userName) return;
+      currentActiveUser = userName;
+      loadCalendarColor();
+      loadUserData();
+    }
+
     function promptAddUser() {
-      const name = prompt("請輸入新長輩的姓名或稱呼 (例: 媽咪、張爺爺):");
+      const name = prompt("請輸入新長輩的姓名或稱呼 (例：媽咪、張爺爺、陳奶奶)：");
       if (name && name.trim() !== "") {
         const cleanName = name.trim();
-        let users = JSON.parse(localStorage.getItem('bp_user_list')) || ['媽咪', ...DEFAULT_USERS];
+        let users = getStoredUsers();
         if (!users.includes(cleanName)) {
           users.push(cleanName);
-          localStorage.setItem('bp_user_list', JSON.stringify(users));
+          saveStoredUsers(users);
         }
         currentActiveUser = cleanName;
         renderUserSelectOptions(users);
         loadCalendarColor();
+        loadUserData();
+        alert(`已成功切換至長輩：「${cleanName}」！`);
+      }
+    }
+
+    function openUserManageModal() {
+      const users = getStoredUsers();
+      const listEl = document.getElementById('user-manage-list');
+      if (!listEl) return;
+
+      listEl.innerHTML = users.map((u, idx) => `
+        <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+          <span class="font-black text-slate-800 text-sm">${u} ${u === '媽咪' ? '<span class="text-xs bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded ml-1">預設</span>' : ''}</span>
+          <div class="flex items-center gap-1">
+            ${idx > 0 ? `<button onclick="moveUser(${idx}, -1)" class="bg-white border text-slate-700 px-2 py-1 rounded text-xs font-bold">⬆️</button>` : ''}
+            ${idx < users.length - 1 ? `<button onclick="moveUser(${idx}, 1)" class="bg-white border text-slate-700 px-2 py-1 rounded text-xs font-bold">⬇️</button>` : ''}
+            ${users.length > 1 && u !== '媽咪' ? `<button onclick="removeUserItem('${u}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold ml-1">刪除</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('user-manage-modal').classList.remove('hidden');
+    }
+
+    function closeUserManageModal() {
+      document.getElementById('user-manage-modal').classList.add('hidden');
+    }
+
+    function moveUser(index, direction) {
+      let users = getStoredUsers();
+      const targetIndex = index + direction;
+      if (targetIndex >= 0 && targetIndex < users.length) {
+        const temp = users[index];
+        users[index] = users[targetIndex];
+        users[targetIndex] = temp;
+        saveStoredUsers(users);
+        openUserManageModal();
+        renderUserSelectOptions(users);
+      }
+    }
+
+    function removeUserItem(userName) {
+      if (userName === '媽咪') {
+        alert("「媽咪」為預設核心長輩，不可刪除！");
+        return;
+      }
+      if (confirm(`確定要從列表選單移除長輩「${userName}」嗎？(歷史雲端資料仍會保留)`)) {
+        let users = getStoredUsers().filter(u => u !== userName);
+        saveStoredUsers(users);
+        if (currentActiveUser === userName) {
+          currentActiveUser = users[0] || '媽咪';
+        }
+        openUserManageModal();
+        renderUserSelectOptions(users);
         loadUserData();
       }
     }
@@ -731,7 +834,6 @@
       }
     }
 
-    // 💡 頁面刪除紀錄時，同步向 SheetDB 發送 DELETE 請求刪除雲端對應資料！
     function deleteBPRecord(id) {
       if (confirm("確定要刪除這筆血壓紀錄嗎？")) {
         let records = JSON.parse(localStorage.getItem(`bp_${currentActiveUser}`)) || [];
@@ -751,13 +853,12 @@
       }
     }
 
-    // 💡 疼痛三階層選擇邏輯 (區域 -> 左右側 -> 細項)
+    // 疼痛三階層選擇邏輯 (區域 -> 左右側 -> 細項)
     function selectPainRegion(region) {
       currentPainRegion = region;
       const details = PAIN_DETAILS_MAP[region];
-      currentPainDetail = details[0]; // 預設第一個細項
+      currentPainDetail = details[0];
 
-      // 更新大區域按鈕選取樣式
       ['head', 'arm', 'leg', 'trunk'].forEach(r => {
         const btn = document.getElementById(`region-btn-${r}`);
         if (r === region) {
@@ -884,7 +985,6 @@
       }
     }
 
-    // 💡 抓取可複選的用藥時段
     function getSelectedMedTimes() {
       const checkboxes = document.querySelectorAll('.med-time-checkbox:checked');
       return Array.from(checkboxes).map(cb => cb.value);
@@ -960,7 +1060,6 @@
       }
     }
 
-    // 💡 依據手機現在時間，判斷並直觀提示長輩「現在該吃什麼藥」
     function updateCurrentTimeDueMeds() {
       const now = new Date();
       const hours = now.getHours();
@@ -1027,18 +1126,10 @@
       loadUserData();
     }
 
-    function changeCalendarColor(color) {
-      currentCalendarColor = color;
-      localStorage.setItem(`cal_color_${currentActiveUser}`, color);
-      renderMonthlyCalendar();
-    }
-
     function loadCalendarColor() {
       const savedColor = localStorage.getItem(`cal_color_${currentActiveUser}`);
       if (savedColor) {
         currentCalendarColor = savedColor;
-        const colorInput = document.getElementById('cal-theme-color');
-        if (colorInput) colorInput.value = savedColor;
       }
     }
 
@@ -1103,8 +1194,6 @@
       }
     }
 
-    async 
-    // 動態載入疼痛改善與緩解選項 (包含家人藥物、躺下休息、多喝水等)
     function updatePainReliefOptions() {
       const select = document.getElementById('pain-relief');
       if (!select) return;
@@ -1132,7 +1221,6 @@
       select.innerHTML = htmlOptions;
     }
 
-    // 放大圖片 Modal 預覽
     function openPhotoModal(src) {
       document.getElementById('modal-img-tag').src = src;
       document.getElementById('photo-preview-modal').classList.remove('hidden');
@@ -1142,7 +1230,7 @@
       document.getElementById('photo-preview-modal').classList.add('hidden');
     }
 
-    function loadUserData() {
+    async function loadUserData() {
       try {
         const res = await fetch(SHEETDB_API_URL);
         const rows = await res.json();
@@ -1150,7 +1238,6 @@
           const userRows = rows.filter(r => r["長輩"] === currentActiveUser);
           
           if (userRows.length > 0) {
-            // 1. 同步血壓
             const cloudBp = userRows.filter(r => r["時段"] === "早上" || r["時段"] === "晚上" || r["時段"] === "血壓紀錄").map((r, idx) => ({
               id: idx + 1000,
               date: r["時間"] ? r["時間"].split(' ')[0] : '',
@@ -1162,7 +1249,6 @@
             })).reverse();
             if (cloudBp.length > 0) localStorage.setItem(`bp_${currentActiveUser}`, JSON.stringify(cloudBp));
 
-            // 2. 同步疼痛紀錄
             const cloudPain = userRows.filter(r => r["時段"] === "疼痛紀錄").map((r, idx) => {
               const noteStr = r["備註"] || "";
               return {
@@ -1178,7 +1264,6 @@
             }).reverse();
             if (cloudPain.length > 0) localStorage.setItem(`pain_${currentActiveUser}`, JSON.stringify(cloudPain));
 
-            // 3. 同步用藥提醒
             const cloudMeds = userRows.filter(r => r["時段"] === "用藥紀錄").map((r, idx) => {
               const noteStr = r["備註"] || "";
               return {
@@ -1191,7 +1276,6 @@
             });
             if (cloudMeds.length > 0) localStorage.setItem(`med_${currentActiveUser}`, JSON.stringify(cloudMeds));
 
-            // 4. 同步看診行事曆
             const cloudCal = userRows.filter(r => r["時段"] === "行事曆行程").map((r, idx) => {
               const noteStr = r["備註"] || "";
               const dt = r["時間"] || "";
@@ -1257,120 +1341,9 @@
       `).join('');
 
       updatePainReliefOptions();
-
-      // 更新即時吃藥提醒卡片
       updateCurrentTimeDueMeds();
-
       renderMonthlyCalendar();
       updateChart(bpRecords);
     }
 
-    function renderMonthlyCalendar() {
-      const year = viewDate.getFullYear();
-      const month = viewDate.getMonth();
-      document.getElementById('cal-month-title').innerText = `${year}年 ${month + 1}月`;
-
-      const firstDayIndex = new Date(year, month, 1).getDay();
-      const totalDays = new Date(year, month + 1, 0).getDate();
-
-      let events = JSON.parse(localStorage.getItem(`cal_${currentActiveUser}`)) || [];
-
-      let gridHtml = '';
-      for (let i = 0; i < firstDayIndex; i++) {
-        gridHtml += `<div class="h-14 bg-slate-50/50 rounded-lg"></div>`;
-      }
-
-      for (let day = 1; day <= totalDays; day++) {
-        const mm = String(month + 1).padStart(2, '0');
-        const dd = String(day).padStart(2, '0');
-        const dateStr = `${year}-${mm}-${dd}`;
-        const dayEvents = events.filter(e => e.date === dateStr);
-
-        let dotsHtml = '';
-        if (dayEvents.length > 0) {
-          dotsHtml = `<div class="flex gap-1 flex-wrap justify-center mb-1">` + dayEvents.map(e => `<span class="w-2.5 h-2.5 rounded-full" style="background-color: ${e.color || '#3b82f6'};"></span>`).join('') + `</div>`;
-        }
-
-        gridHtml += `
-          <div class="h-14 bg-white border border-slate-100 rounded-xl p-1 flex flex-col justify-between items-center relative shadow-sm">
-            <span class="text-xs font-black text-slate-700">${day}</span>
-            ${dotsHtml}
-          </div>
-        `;
-      }
-      document.getElementById('calendar-grid').innerHTML = gridHtml;
-
-      const monthEvents = events.filter(e => {
-        const [eY, eM] = e.date.split('-');
-        return parseInt(eY) === year && parseInt(eM) === (month + 1);
-      });
-
-      const calList = document.getElementById('calendar-list');
-      calList.innerHTML = monthEvents.length === 0 ? '<div class="text-gray-400 text-center py-3 text-sm">本月尚無安排看診行程</div>' : monthEvents.map(e => {
-        const itemColor = e.color || '#3b82f6';
-        return `
-        <div class="p-3.5 rounded-2xl border-l-8 flex justify-between items-start bg-slate-50 shadow-sm border" style="border-left-color: ${itemColor};">
-          <div>
-            <div class="text-xs font-bold flex items-center gap-1 text-slate-600">
-              <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${itemColor};"></span>
-              <span><i class="fa-solid fa-calendar mr-1"></i>${e.date} ${e.time || ''}</span>
-            </div>
-            <div class="text-base font-black text-slate-900 mt-0.5">${e.title}</div>
-            <div class="text-xs text-slate-600 mt-1 font-bold">備註：${e.note || '無'}</div>
-          </div>
-          <button onclick="deleteCalendarEvent(${e.id})" class="text-red-500 text-xs font-bold bg-white px-2 py-1 rounded-lg border border-red-200">刪除</button>
-        </div>
-      `}).join('');
-    }
-
-    let bpChart;
-    function initChart() {
-      const ctx = document.getElementById('bpChart').getContext('2d');
-      bpChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: [], datasets: [] },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-
-    function updateChart(records) {
-      if (!bpChart) return;
-      const recent = [...records].reverse().slice(-14);
-      bpChart.data.labels = recent.map(r => `${r.date.slice(5)} ${r.slot}`);
-      bpChart.data.datasets = [
-        { label: '收縮壓 (mmHg)', data: recent.map(r => r.sys), borderColor: '#ef4444', backgroundColor: '#ef444420', tension: 0.2 },
-        { label: '舒張壓 (mmHg)', data: recent.map(r => r.dia), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.2 }
-      ];
-      bpChart.update();
-    }
-  </script>
-
-  <!-- 長輩管理與排序 Modal -->
-  <div id="user-manage-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col gap-4">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-users-gear mr-1"></i> 長輩名單排序與管理</h3>
-        <button onclick="closeUserManageModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
-      </div>
-      <div id="user-manage-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto">
-        <!-- 動態列出長輩與上下移動按鈕 -->
-      </div>
-      <div class="flex gap-2">
-        <button onclick="closeUserManageModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow">完成儲存</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- 藥物照片大圖預覽 Modal -->
-  <div id="photo-preview-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" onclick="closePhotoModal()">
-    <div class="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl flex flex-col items-center gap-3 relative" onclick="event.stopPropagation()">
-      <button onclick="closePhotoModal()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl">&times;</button>
-      <h3 class="font-black text-emerald-900 text-base"><i class="fa-solid fa-capsules mr-1"></i> 藥物照片大圖</h3>
-      <img id="modal-img-tag" src="" class="w-full max-h-80 object-contain rounded-2xl border-2 border-emerald-200 shadow">
-      <button onclick="closePhotoModal()" class="w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow">關閉預覽</button>
-    </div>
-  </div>
-
-</body>
-</html>
+    function renderMonthlyCalendar()
