@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>長輩健康守護與行事曆 - Firebase 雲端同步版</title>
+  <title>長輩健康守護與行事曆 - 鮮豔全功能版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -11,228 +11,483 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDK (Compat 輕量版) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
+    /* =================================================================
+       🎨 【顏色自訂區】您可以在這裡自由修改整體網頁的主題色碼！
+       色碼查詢可搜尋「HTML 色碼表」，將 # 後面的 6 位英數字替換即可
+       ================================================================= */
+    :root {
+      --bg-page: #f0fdf4;          /* 整體網頁背景色：明亮薄荷白 */
+      --header-bg: #10b981;        /* 頂部標題列底色：鮮豔翠綠色 (Emerald 500) */
+      --header-sub: #059669;       /* 頂部長輩選擇框底色：亮綠 (Emerald 600) */
+      --btn-primary: #0ea5e9;      /* 主要儲存按鈕底色：鮮豔天空藍 (Sky 500) */
+      --btn-primary-hover: #0284c7;/* 按鈕滑過/點擊深色 */
+      --tab-active-bg: #f97316;    /* 選中分頁的按鈕底色：活力亮橘色 (Orange 500) */
+    }
+
     html { touch-action: manipulation; }
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background-color: #e6f0eb;
-      color: #0f172a;
+      background-color: var(--bg-page);
+      color: #1e293b;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-keypad { box-shadow: 0 4px 0 #94a3b8; transition: all 0.1s ease; }
-    .btn-keypad:active { transform: translateY(4px); box-shadow: 0 0 0 #94a3b8; }
-    /* 高飽和度分頁與按鈕樣式 */
-    .tab-btn { background-color: #cbd5e1; color: #334155; font-weight: 900; }
-    .tab-btn.active { background-color: #1b4d3e !important; color: #ffffff !important; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+
+    /* 套用自訂顏色的樣式 */
+    .theme-header { background-color: var(--header-bg); }
+    .theme-header-sub { background-color: var(--header-sub); }
+    .theme-btn-save { background-color: var(--btn-primary); }
+    .theme-btn-save:hover { background-color: var(--btn-primary-hover); }
+
+    .btn-keypad { box-shadow: 0 4px 0 #cbd5e1; transition: all 0.1s ease; }
+    .btn-keypad:active { transform: translateY(4px); box-shadow: 0 0 0 #cbd5e1; }
+
+    /* 頁籤按鈕樣式 */
+    .tab-btn { background-color: #ffffff; color: #475569; border: 2px solid #cbd5e1; }
+    .tab-btn.active {
+      background-color: var(--tab-active-bg) !important;
+      color: #ffffff !important;
+      border-color: #ea580c !important;
+      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.35);
+      transform: translateY(-2px);
+    }
+
+    /* 勾選標籤按鈕互動樣式 */
+    .chip-checkbox:checked + label {
+      background-color: #0ea5e9;
+      color: white;
+      border-color: #0284c7;
+      box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
+    }
+    .chip-radio:checked + label {
+      background-color: #f97316;
+      color: white;
+      border-color: #ea580c;
+      box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+    }
   </style>
 </head>
 <body class="pb-28">
 
-  <!-- 頂部標題列 -->
-  <header class="bg-[#1b4d3e] text-white p-4 sticky top-0 z-50 shadow-lg border-b-4 border-[#12352b]">
+  <!-- 頂部鮮豔標題列 -->
+  <header class="theme-header text-white p-4 sticky top-0 z-50 shadow-lg">
     <div class="max-w-md mx-auto flex flex-col gap-2">
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2">
-          <i class="fa-solid fa-heart-pulse text-2xl text-rose-400"></i>
-          <h1 class="text-xl font-black tracking-wide">長輩健康守護</h1>
+          <div class="bg-white p-1.5 rounded-full shadow">
+            <i class="fa-solid fa-heart-pulse text-xl text-rose-500"></i>
+          </div>
+          <h1 class="text-xl font-black tracking-wide drop-shadow-sm">長輩健康守護</h1>
         </div>
-        <div id="sync-status-badge" class="bg-[#12352b] text-emerald-200 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 font-black border border-emerald-400/60 shadow-inner">
-          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Firebase 連線中</span>
+        <div id="sync-status-badge" class="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 font-black border border-white/40">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse"></span>
+          <span>準備連線</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 bg-[#12352b] p-2.5 rounded-xl mt-1 border border-emerald-700">
-        <i class="fa-solid fa-user-gear text-emerald-300 ml-1 text-lg"></i>
-        <span class="text-sm font-black whitespace-nowrap text-emerald-100">目前長輩：</span>
+      <!-- 長輩切換列 -->
+      <div class="flex items-center gap-2 theme-header-sub p-2 rounded-xl mt-1 shadow-inner">
+        <i class="fa-solid fa-user-check text-yellow-200 ml-1 text-lg"></i>
+        <span class="text-sm font-black whitespace-nowrap">目前長輩：</span>
         <select id="user-select" onchange="switchUser(this.value)" class="bg-white text-slate-900 font-black text-lg rounded-lg px-3 py-1 flex-1 focus:outline-none shadow">
         </select>
-        <button type="button" onclick="promptAddUser()" class="bg-[#2d7a5f] hover:bg-[#358f6e] active:bg-[#1b4d3e] text-white px-3.5 py-1.5 text-sm font-black rounded-lg shadow border border-emerald-400 cursor-pointer">
-          <i class="fa-solid fa-user-plus mr-1"></i>新增
+        <button type="button" onclick="promptAddUser()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 px-3.5 py-1.5 text-sm font-black rounded-lg shadow cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i>新增
         </button>
       </div>
     </div>
   </header>
 
-  <!-- 主導覽頁籤 -->
-  <main class="max-w-md mx-auto p-4 flex flex-col gap-6">
-    <div class="grid grid-cols-4 gap-2 bg-[#b8d0c7] p-2 rounded-2xl text-center shadow-md border-2 border-[#9bb8ad]">
-      <button id="tab-bp-btn" onclick="switchTab('bp')" class="tab-btn active py-2.5 text-sm rounded-xl transition-all"><i class="fa-solid fa-stethoscope block text-base mb-0.5"></i>血壓</button>
-      <button id="tab-pain-btn" onclick="switchTab('pain')" class="tab-btn py-2.5 text-sm rounded-xl transition-all"><i class="fa-solid fa-child block text-base mb-0.5"></i>疼痛</button>
-      <button id="tab-med-btn" onclick="switchTab('med')" class="tab-btn py-2.5 text-sm rounded-xl transition-all"><i class="fa-solid fa-pills block text-base mb-0.5"></i>用藥</button>
-      <button id="tab-cal-btn" onclick="switchTab('cal')" class="tab-btn py-2.5 text-sm rounded-xl transition-all"><i class="fa-solid fa-calendar-days block text-base mb-0.5"></i>行事曆</button>
+  <main class="max-w-md mx-auto p-4 flex flex-col gap-5">
+
+    <!-- 📌 置頂用藥提醒看板 (隨時可見) -->
+    <div id="pinned-med-banner" class="bg-gradient-to-r from-amber-100 via-yellow-50 to-orange-100 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-black text-amber-900 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-thumbtack text-rose-500 rotate-45"></i> 置頂用藥提醒看板
+        </span>
+        <button onclick="switchTab('med')" class="text-xs font-black bg-amber-500 text-white px-2.5 py-1 rounded-lg shadow-sm">
+          管理藥物 <i class="fa-solid fa-chevron-right ml-0.5"></i>
+        </button>
+      </div>
+      <div id="pinned-med-list" class="flex gap-2.5 overflow-x-auto pb-1">
+        <div class="text-xs font-bold text-amber-800/80 py-1">尚無設定置頂藥物，請至「用藥」頁籤新增。</div>
+      </div>
     </div>
 
-    <!-- 1. 血壓頁籤 -->
-    <section id="tab-bp" class="tab-content flex flex-col gap-6">
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] border-b-2 border-slate-200 pb-2 mb-4 flex items-center justify-between">
-          <span><i class="fa-solid fa-pen-to-square text-[#2d7a5f] mr-2"></i>輸入血壓數值</span>
+    <!-- 四大功能導覽頁籤 -->
+    <div class="grid grid-cols-4 gap-2 text-center">
+      <button id="tab-bp-btn" onclick="switchTab('bp')" class="tab-btn active py-3 font-black text-sm rounded-2xl transition-all">
+        <i class="fa-solid fa-stethoscope block text-lg mb-1"></i>血壓
+      </button>
+      <button id="tab-pain-btn" onclick="switchTab('pain')" class="tab-btn py-3 font-black text-sm rounded-2xl transition-all">
+        <i class="fa-solid fa-person-dots-from-line block text-lg mb-1"></i>疼痛
+      </button>
+      <button id="tab-med-btn" onclick="switchTab('med')" class="tab-btn py-3 font-black text-sm rounded-2xl transition-all">
+        <i class="fa-solid fa-pills block text-lg mb-1"></i>用藥
+      </button>
+      <button id="tab-cal-btn" onclick="switchTab('cal')" class="tab-btn py-3 font-black text-sm rounded-2xl transition-all">
+        <i class="fa-solid fa-calendar-check block text-lg mb-1"></i>行事曆
+      </button>
+    </div>
+
+    <!-- ==================== 1. 血壓頁籤 ==================== -->
+    <section id="tab-bp" class="tab-content flex flex-col gap-5">
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-200">
+        <h2 class="text-xl font-black text-emerald-700 border-b-2 border-emerald-100 pb-2 mb-4 flex items-center justify-between">
+          <span><i class="fa-solid fa-heart-circle-plus text-rose-500 mr-2"></i>輸入血壓數值</span>
+          <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">國健署 722 標準</span>
         </h2>
-        <div class="bg-[#f0fdf4] p-3 rounded-2xl border-2 border-[#b8d0c7] mb-4">
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block text-xs font-black text-slate-700 mb-0.5">日期：</label><input type="date" id="bp-date-input" class="w-full bg-white border-2 border-slate-300 rounded-xl p-2 font-black text-sm text-slate-900"></div>
-            <div><label class="block text-xs font-black text-slate-700 mb-0.5">時間：</label><input type="time" id="bp-time-input" class="w-full bg-white border-2 border-slate-300 rounded-xl p-2 font-black text-sm text-slate-900"></div>
+
+        <!-- 日期與時間 -->
+        <div class="bg-sky-50 p-3 rounded-2xl border border-sky-200 mb-4 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-black text-sky-900 mb-1">測量日期：</label>
+            <input type="date" id="bp-date-input" class="w-full bg-white border-2 border-sky-200 rounded-xl p-2 font-black text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-sky-900 mb-1">測量時間：</label>
+            <input type="time" id="bp-time-input" class="w-full bg-white border-2 border-sky-200 rounded-xl p-2 font-black text-sm">
           </div>
         </div>
+
+        <!-- 早晚選擇 -->
         <div class="grid grid-cols-2 gap-3 mb-4">
-          <button id="time-morning" onclick="setTimeSlot('morning')" class="py-3 rounded-2xl font-black text-base border-2 border-amber-500 bg-amber-100 text-amber-900 shadow"><i class="fa-solid fa-sun text-amber-600 mr-1"></i> 早上</button>
-          <button id="time-evening" onclick="setTimeSlot('evening')" class="py-3 rounded-2xl font-black text-base border-2 border-slate-300 bg-slate-100 text-slate-600"><i class="fa-solid fa-moon text-indigo-600 mr-1"></i> 晚上</button>
+          <button id="time-morning" onclick="setTimeSlot('morning')" class="py-3 rounded-2xl font-black text-base border-2 border-amber-400 bg-amber-100 text-amber-900 shadow-sm">
+            <i class="fa-solid fa-sun text-amber-500 mr-1"></i> 早上 (起床1小時內)
+          </button>
+          <button id="time-evening" onclick="setTimeSlot('evening')" class="py-3 rounded-2xl font-black text-base border-2 border-slate-200 bg-slate-50 text-slate-600">
+            <i class="fa-solid fa-moon text-indigo-500 mr-1"></i> 晚上 (睡前)
+          </button>
         </div>
-        <div class="grid grid-cols-2 gap-4 mb-3">
-          <div id="box-sys" onclick="setActiveInput('sys')" class="p-3 bg-rose-50 border-4 border-rose-600 rounded-2xl text-center cursor-pointer shadow-md">
-            <span class="text-xs font-black text-rose-800 block">收縮壓 (高壓)</span>
-            <span id="val-sys" class="text-4xl font-black text-rose-900 my-1 block">120</span>
+
+        <!-- 數值顯示框 -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div id="box-sys" onclick="setActiveInput('sys')" class="p-3 bg-rose-50 border-4 border-rose-500 rounded-2xl text-center cursor-pointer shadow">
+            <span class="text-xs font-black text-rose-700 block">收縮壓 (高壓)</span>
+            <span id="val-sys" class="text-4xl font-black text-rose-600 my-1 block">118</span>
           </div>
-          <div id="box-dia" onclick="setActiveInput('dia')" class="p-3 bg-sky-50 border-2 border-sky-300 rounded-2xl text-center cursor-pointer opacity-80">
-            <span class="text-xs font-black text-sky-800 block">舒張壓 (低壓)</span>
-            <span id="val-dia" class="text-4xl font-black text-sky-900 my-1 block">80</span>
+          <div id="box-dia" onclick="setActiveInput('dia')" class="p-3 bg-sky-50 border-2 border-sky-200 rounded-2xl text-center cursor-pointer opacity-85">
+            <span class="text-xs font-black text-sky-700 block">舒張壓 (低壓)</span>
+            <span id="val-dia" class="text-4xl font-black text-sky-600 my-1 block">76</span>
           </div>
         </div>
-        <div id="box-pulse" onclick="setActiveInput('pulse')" class="p-3 bg-amber-50 border-2 border-amber-300 rounded-2xl text-center cursor-pointer opacity-80 mb-4">
-          <span class="text-xs font-black text-amber-900 block">脈搏 (心跳/分)</span>
-          <span id="val-pulse" class="text-3xl font-black text-amber-950 my-1 block">72</span>
+        <div id="box-pulse" onclick="setActiveInput('pulse')" class="p-2.5 bg-amber-50 border-2 border-amber-200 rounded-2xl text-center cursor-pointer opacity-85 mb-4">
+          <span class="text-xs font-black text-amber-800">脈搏 (心跳/分)：</span>
+          <span id="val-pulse" class="text-2xl font-black text-amber-600 ml-1">72</span>
         </div>
-        <div class="bg-slate-200 p-3 rounded-2xl mb-4 border border-slate-300">
+
+        <!-- 🩺 即時國健署血壓評估警語框 -->
+        <div id="bp-alert-box" class="p-4 rounded-2xl border-2 mb-4 transition-all bg-emerald-50 border-emerald-400 text-emerald-900">
+          <div class="flex items-center gap-2 font-black text-base mb-1" id="bp-alert-title">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i> 血壓正常 (國健署標準)
+          </div>
+          <p class="text-xs font-bold leading-relaxed" id="bp-alert-desc">
+            居家血壓維持在 120/80 mmHg 以下非常理想！請繼續保持規律作息與清淡飲食。
+          </p>
+        </div>
+
+        <!-- 大數字鍵盤 -->
+        <div class="bg-slate-100 p-3 rounded-2xl mb-4 border border-slate-200">
           <div class="grid grid-cols-3 gap-2">
-            <button onclick="pressKey(1)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">1</button>
-            <button onclick="pressKey(2)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">2</button>
-            <button onclick="pressKey(3)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">3</button>
-            <button onclick="pressKey(4)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">4</button>
-            <button onclick="pressKey(5)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">5</button>
-            <button onclick="pressKey(6)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">6</button>
-            <button onclick="pressKey(7)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">7</button>
-            <button onclick="pressKey(8)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">8</button>
-            <button onclick="pressKey(9)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">9</button>
-            <button onclick="pressKey('clear')" class="btn-keypad bg-amber-200 text-amber-950 text-lg font-black py-3 rounded-xl">清除</button>
-            <button onclick="pressKey(0)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-900">0</button>
-            <button onclick="pressKey('back')" class="btn-keypad bg-slate-300 text-slate-800 text-xl font-black py-3 rounded-xl"><i class="fa-solid fa-backspace"></i></button>
+            <button onclick="pressKey(1)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">1</button>
+            <button onclick="pressKey(2)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">2</button>
+            <button onclick="pressKey(3)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">3</button>
+            <button onclick="pressKey(4)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">4</button>
+            <button onclick="pressKey(5)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">5</button>
+            <button onclick="pressKey(6)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">6</button>
+            <button onclick="pressKey(7)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">7</button>
+            <button onclick="pressKey(8)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">8</button>
+            <button onclick="pressKey(9)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">9</button>
+            <button onclick="pressKey('clear')" class="btn-keypad bg-amber-200 text-amber-900 text-lg font-black py-3 rounded-xl">清除</button>
+            <button onclick="pressKey(0)" class="btn-keypad bg-white text-2xl font-black py-3 rounded-xl text-slate-800">0</button>
+            <button onclick="pressKey('back')" class="btn-keypad bg-slate-200 text-slate-700 text-xl font-black py-3 rounded-xl"><i class="fa-solid fa-backspace"></i></button>
           </div>
         </div>
-        <button onclick="saveBPRecord()" class="w-full bg-[#1b4d3e] hover:bg-[#12352b] active:bg-[#0a1f18] text-white font-black text-xl py-4 rounded-2xl shadow-xl border-2 border-emerald-600">
-          <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存並同步至 Firebase
+
+        <button onclick="saveBPRecord()" class="w-full theme-btn-save text-white font-black text-xl py-4 rounded-2xl shadow-lg">
+          <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存血壓紀錄
         </button>
       </div>
 
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
+      <!-- 趨勢圖與歷史 -->
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-200">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-xl font-black text-[#1b4d3e]"><i class="fa-solid fa-chart-line text-[#2d7a5f] mr-2"></i>血壓趨勢與歷史</h2>
-          <button onclick="loadUserData()" class="bg-[#b8d0c7] hover:bg-[#a3c4b7] text-[#1b4d3e] text-xs font-black px-3.5 py-2 rounded-xl shadow"><i class="fa-solid fa-rotate mr-1"></i>重新整理</button>
+          <h2 class="text-lg font-black text-emerald-800"><i class="fa-solid fa-chart-line text-sky-500 mr-2"></i>血壓趨勢與歷史</h2>
+          <button onclick="loadUserData()" class="bg-sky-100 text-sky-700 text-xs font-black px-3 py-1.5 rounded-xl"><i class="fa-solid fa-rotate mr-1"></i>同步</button>
         </div>
-        <div class="h-56 mb-4"><canvas id="bpChart"></canvas></div>
+        <div class="h-52 mb-4"><canvas id="bpChart"></canvas></div>
         <div id="bp-history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
       </div>
     </section>
 
-    <!-- 2. 疼痛頁籤 -->
-    <section id="tab-pain" class="tab-content hidden flex-col gap-6">
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] border-b-2 border-slate-200 pb-2 mb-4">
-          <i class="fa-solid fa-child text-[#2d7a5f] mr-2"></i>記錄疼痛狀況
+    <!-- ==================== 2. 疼痛紀錄頁籤 (階層式勾選) ==================== -->
+    <section id="tab-pain" class="tab-content hidden flex-col gap-5">
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-orange-200">
+        <h2 class="text-xl font-black text-orange-600 border-b-2 border-orange-100 pb-2 mb-4">
+          <i class="fa-solid fa-person-dots-from-line mr-2"></i>點選疼痛部位與狀況
         </h2>
+
+        <!-- 步驟 1：選擇大項目 -->
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">疼痛部位：</label>
-          <input type="text" id="pain-part" placeholder="例如：右膝蓋、腰部" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900">
+          <label class="block text-sm font-black text-slate-800 mb-2">1. 選擇大部位：</label>
+          <div class="grid grid-cols-4 gap-2">
+            <div><input type="radio" name="pain-major" id="pm-head" value="頭部" class="chip-radio hidden" checked onchange="updatePainSubParts()"><label for="pm-head" class="block text-center py-2.5 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">頭部/頸</label></div>
+            <div><input type="radio" name="pain-major" id="pm-trunk" value="軀幹" class="chip-radio hidden" onchange="updatePainSubParts()"><label for="pm-trunk" class="block text-center py-2.5 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">軀幹/背</label></div>
+            <div><input type="radio" name="pain-major" id="pm-upper" value="上肢" class="chip-radio hidden" onchange="updatePainSubParts()"><label for="pm-upper" class="block text-center py-2.5 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">上肢/手</label></div>
+            <div><input type="radio" name="pain-major" id="pm-lower" value="下肢" class="chip-radio hidden" onchange="updatePainSubParts()"><label for="pm-lower" class="block text-center py-2.5 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">下肢/腳</label></div>
+          </div>
         </div>
+
+        <!-- 步驟 2：動態展開小部位 (多選) -->
+        <div class="mb-4 bg-orange-50/70 p-3 rounded-2xl border border-orange-200">
+          <label class="block text-sm font-black text-orange-900 mb-2">2. 細部位置 (可多選)：</label>
+          <div id="pain-subparts-container" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- 步驟 3：側別 (左側/右側/雙側/中間) -->
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">疼痛程度 (1-10分)：</label>
-          <input type="number" id="pain-level" min="1" max="10" value="3" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900">
+          <label class="block text-sm font-black text-slate-800 mb-2">3. 方位 / 側別：</label>
+          <div class="grid grid-cols-4 gap-2">
+            <div><input type="checkbox" name="pain-side" id="ps-left" value="左側" class="chip-checkbox hidden"><label for="ps-left" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">左側</label></div>
+            <div><input type="checkbox" name="pain-side" id="ps-right" value="右側" class="chip-checkbox hidden"><label for="ps-right" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">右側</label></div>
+            <div><input type="checkbox" name="pain-side" id="ps-both" value="雙側" class="chip-checkbox hidden"><label for="ps-both" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">雙側</label></div>
+            <div><input type="checkbox" name="pain-side" id="ps-mid" value="正中" class="chip-checkbox hidden"><label for="ps-mid" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-sm cursor-pointer">正中</label></div>
+          </div>
         </div>
+
+        <!-- 步驟 4：疼痛型態 (多選) -->
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">備註說明：</label>
-          <textarea id="pain-note" placeholder="記錄疼痛性質..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900 h-20"></textarea>
+          <label class="block text-sm font-black text-slate-800 mb-2">4. 疼痛型態 (可多選)：</label>
+          <div class="grid grid-cols-4 gap-2">
+            <div><input type="checkbox" name="pain-type" id="pt-1" value="刺痛" class="chip-checkbox hidden"><label for="pt-1" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-xs cursor-pointer">⚡ 刺痛</label></div>
+            <div><input type="checkbox" name="pain-type" id="pt-2" value="悶痛" class="chip-checkbox hidden"><label for="pt-2" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-xs cursor-pointer">☁️ 悶痛</label></div>
+            <div><input type="checkbox" name="pain-type" id="pt-3" value="抽痛" class="chip-checkbox hidden"><label for="pt-3" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-xs cursor-pointer">💥 抽痛</label></div>
+            <div><input type="checkbox" name="pain-type" id="pt-4" value="痠麻痛" class="chip-checkbox hidden"><label for="pt-4" class="block text-center py-2 bg-slate-100 border-2 border-slate-200 rounded-xl font-black text-xs cursor-pointer">🌀 痠麻痛</label></div>
+          </div>
         </div>
-        <button onclick="savePainRecord()" class="w-full bg-[#1b4d3e] hover:bg-[#12352b] text-white font-black text-xl py-4 rounded-2xl shadow-xl border-2 border-emerald-600">
+
+        <!-- 步驟 5：疼痛頻率 & 程度 -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1">5. 發作頻率：</label>
+            <select id="pain-freq" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-black text-sm">
+              <option value="偶爾陣痛">偶爾陣痛</option>
+              <option value="活動/走路時痛">活動/走路時痛</option>
+              <option value="整天持續疼痛">整天持續疼痛</option>
+              <option value="半夜痛醒">半夜痛醒</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1">疼痛分數 (1~10)：</label>
+            <select id="pain-level" class="w-full bg-rose-50 border-2 border-rose-300 text-rose-800 rounded-xl p-2.5 font-black text-sm">
+              <option value="2">2分 (輕微不適)</option>
+              <option value="4" selected>4分 (中度疼痛)</option>
+              <option value="6">6分 (明顯疼痛)</option>
+              <option value="8">8分 (劇烈疼痛)</option>
+              <option value="10">10分 (難以忍受)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 步驟 6：改善方式與搭配藥物 (多選) -->
+        <div class="mb-4 bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200">
+          <label class="block text-sm font-black text-emerald-900 mb-2">6. 改善方式 / 搭配藥物 (可多選)：</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div><input type="checkbox" name="pain-relief" id="pr-1" value="口服止痛藥" class="chip-checkbox hidden"><label for="pr-1" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">💊 口服止痛藥</label></div>
+            <div><input type="checkbox" name="pain-relief" id="pr-2" value="貼痠痛藥布" class="chip-checkbox hidden"><label for="pr-2" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🩹 貼痠痛藥布</label></div>
+            <div><input type="checkbox" name="pain-relief" id="pr-3" value="熱敷舒緩" class="chip-checkbox hidden"><label for="pr-3" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">♨️ 熱敷舒緩</label></div>
+            <div><input type="checkbox" name="pain-relief" id="pr-4" value="冰敷消腫" class="chip-checkbox hidden"><label for="pr-4" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🧊 冰敷消腫</label></div>
+            <div><input type="checkbox" name="pain-relief" id="pr-5" value="臥床休息" class="chip-checkbox hidden"><label for="pr-5" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🛏️ 臥床休息</label></div>
+            <div><input type="checkbox" name="pain-relief" id="pr-6" value="輕柔按摩" class="chip-checkbox hidden"><label for="pr-6" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">👐 輕柔按摩</label></div>
+          </div>
+          <input type="text" id="pain-note" placeholder="補充說明 (例如：吃了普拿疼後改善許多)" class="w-full mt-2 bg-white border border-emerald-300 rounded-xl p-2 text-xs font-bold">
+        </div>
+
+        <button onclick="savePainRecord()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black text-xl py-4 rounded-2xl shadow-lg">
           <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存疼痛紀錄
         </button>
       </div>
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] mb-3">疼痛歷史紀錄</h2>
-        <div id="pain-history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
+
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-orange-200">
+        <h2 class="text-lg font-black text-orange-800 mb-3">歷史疼痛追蹤清單</h2>
+        <div id="pain-history-list" class="flex flex-col gap-2.5 max-h-80 overflow-y-auto"></div>
       </div>
     </section>
 
-    <!-- 3. 用藥頁籤 -->
-    <section id="tab-med" class="tab-content hidden flex-col gap-6">
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] border-b-2 border-slate-200 pb-2 mb-4">
-          <i class="fa-solid fa-pills text-[#2d7a5f] mr-2"></i>記錄用藥狀況
+    <!-- ==================== 3. 用藥頁籤 (含圖片與置頂設定) ==================== -->
+    <section id="tab-med" class="tab-content hidden flex-col gap-5">
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-sky-200">
+        <h2 class="text-xl font-black text-sky-700 border-b-2 border-sky-100 pb-2 mb-4">
+          <i class="fa-solid fa-pills text-sky-500 mr-2"></i>新增長輩用藥與圖片
         </h2>
-        <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">藥品名稱與劑量：</label>
-          <input type="text" id="med-name" placeholder="例如：降血壓藥 1顆" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900">
+
+        <div class="mb-3">
+          <label class="block text-sm font-black text-slate-800 mb-1">藥品名稱 / 用途：</label>
+          <input type="text" id="med-name" placeholder="例如：白色圓形降血壓藥 (1顆)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-sm">
         </div>
+
+        <!-- 藥品照片上傳區 -->
+        <div class="mb-4 bg-sky-50 p-3 rounded-2xl border border-sky-200">
+          <label class="block text-sm font-black text-sky-900 mb-1">
+            <i class="fa-solid fa-camera mr-1"></i> 拍攝或上傳藥丸/藥袋照片：
+          </label>
+          <input type="file" id="med-photo-input" accept="image/*" onchange="previewMedPhoto(event)" class="w-full text-xs font-bold text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-sky-500 file:text-white hover:file:bg-sky-600">
+          <img id="med-photo-preview" class="hidden mt-2 w-24 h-24 object-cover rounded-xl border-2 border-sky-400 shadow">
+        </div>
+
+        <!-- 完整 8 大服用時段 -->
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">服用時段：</label>
-          <div class="grid grid-cols-3 gap-2">
-            <label class="flex items-center justify-center p-3 bg-slate-100 border-2 border-slate-300 rounded-xl font-black text-slate-800 cursor-pointer"><input type="checkbox" name="med-time" value="早餐後" class="mr-2 w-4 h-4">早餐後</label>
-            <label class="flex items-center justify-center p-3 bg-slate-100 border-2 border-slate-300 rounded-xl font-black text-slate-800 cursor-pointer"><input type="checkbox" name="med-time" value="午餐後" class="mr-2 w-4 h-4">午餐後</label>
-            <label class="flex items-center justify-center p-3 bg-slate-100 border-2 border-slate-300 rounded-xl font-black text-slate-800 cursor-pointer"><input type="checkbox" name="med-time" value="晚餐後" class="mr-2 w-4 h-4">晚餐後</label>
+          <label class="block text-sm font-black text-slate-800 mb-2">服用時段 (可多選)：</label>
+          <div class="grid grid-cols-4 gap-2">
+            <div><input type="checkbox" name="med-time" id="mt-1" value="早餐前" class="chip-checkbox hidden"><label for="mt-1" class="block text-center py-2 bg-amber-50 border border-amber-300 rounded-xl font-black text-xs cursor-pointer">🌅 早餐前</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-2" value="早餐後" class="chip-checkbox hidden"><label for="mt-2" class="block text-center py-2 bg-amber-50 border border-amber-300 rounded-xl font-black text-xs cursor-pointer">☀️ 早餐後</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-3" value="午餐前" class="chip-checkbox hidden"><label for="mt-3" class="block text-center py-2 bg-orange-50 border border-orange-300 rounded-xl font-black text-xs cursor-pointer">🕛 午餐前</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-4" value="午餐後" class="chip-checkbox hidden"><label for="mt-4" class="block text-center py-2 bg-orange-50 border-orange-300 rounded-xl font-black text-xs cursor-pointer">🌤️ 午餐後</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-5" value="晚餐前" class="chip-checkbox hidden"><label for="mt-5" class="block text-center py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-black text-xs cursor-pointer">🌆 晚餐前</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-6" value="晚餐後" class="chip-checkbox hidden"><label for="mt-6" class="block text-center py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-black text-xs cursor-pointer">🌙 晚餐後</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-7" value="睡前" class="chip-checkbox hidden"><label for="mt-7" class="block text-center py-2 bg-purple-50 border border-purple-300 rounded-xl font-black text-xs cursor-pointer">🛏️ 睡前</label></div>
+            <div><input type="checkbox" name="med-time" id="mt-8" value="需要時服用" class="chip-checkbox hidden"><label for="mt-8" class="block text-center py-2 bg-rose-50 border border-rose-300 rounded-xl font-black text-xs cursor-pointer">🆘 需要時</label></div>
           </div>
         </div>
-        <button onclick="saveMedRecord()" class="w-full bg-[#1b4d3e] hover:bg-[#12352b] text-white font-black text-xl py-4 rounded-2xl shadow-xl border-2 border-emerald-600">
-          <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存用藥紀錄
+
+        <!-- 置頂選項 -->
+        <div class="mb-4 flex items-center gap-2 bg-amber-50 p-3 rounded-xl border border-amber-300">
+          <input type="checkbox" id="med-pin-check" checked class="w-5 h-5 accent-amber-500">
+          <label for="med-pin-check" class="font-black text-sm text-amber-900 cursor-pointer">
+            📌 將此藥物置頂顯示在網頁最上方看板
+          </label>
+        </div>
+
+        <button onclick="saveMedRecord()" class="w-full theme-btn-save text-white font-black text-xl py-4 rounded-2xl shadow-lg">
+          <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存用藥設定
         </button>
       </div>
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] mb-3">用藥歷史紀錄</h2>
-        <div id="med-history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
+
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-sky-200">
+        <h2 class="text-lg font-black text-sky-800 mb-3">所有藥物清單</h2>
+        <div id="med-history-list" class="flex flex-col gap-3 max-h-80 overflow-y-auto"></div>
       </div>
     </section>
 
-    <!-- 4. 行事曆頁籤 -->
-    <section id="tab-cal" class="tab-content hidden flex-col gap-6">
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] border-b-2 border-slate-200 pb-2 mb-4">
-          <i class="fa-solid fa-calendar-days text-[#2d7a5f] mr-2"></i>新增預約或回診
+    <!-- ==================== 4. 行事曆頁籤 (多色標籤與圖標) ==================== -->
+    <section id="tab-cal" class="tab-content hidden flex-col gap-5">
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200">
+        <h2 class="text-xl font-black text-purple-700 border-b-2 border-purple-100 pb-2 mb-4">
+          <i class="fa-solid fa-calendar-plus text-purple-500 mr-2"></i>新增行事曆行程
         </h2>
+
+        <!-- 選擇事件類別 (不同顏色與圖標) -->
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">事件標題：</label>
-          <input type="text" id="cal-title" placeholder="例如：心臟科回診" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900">
+          <label class="block text-sm font-black text-slate-800 mb-2">選擇行程類別與顏色標記：</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div><input type="radio" name="cal-cat" id="cc-hospital" value="hospital" class="chip-radio hidden" checked><label for="cc-hospital" class="block text-center py-2.5 bg-rose-50 border-2 border-rose-300 text-rose-800 rounded-xl font-black text-xs cursor-pointer">🏥 醫院回診</label></div>
+            <div><input type="radio" name="cal-cat" id="cc-home" value="home" class="chip-radio hidden"><label for="cc-home" class="block text-center py-2.5 bg-emerald-50 border-2 border-emerald-300 text-emerald-800 rounded-xl font-black text-xs cursor-pointer">🏠 回家/聚餐</label></div>
+            <div><input type="radio" name="cal-cat" id="cc-med" value="med" class="chip-radio hidden"><label for="cc-med" class="block text-center py-2.5 bg-sky-50 border-2 border-sky-300 text-sky-800 rounded-xl font-black text-xs cursor-pointer">💊 領慢性處方</label></div>
+            <div><input type="radio" name="cal-cat" id="cc-remind" value="remind" class="chip-radio hidden"><label for="cc-remind" class="block text-center py-2.5 bg-amber-50 border-2 border-amber-300 text-amber-800 rounded-xl font-black text-xs cursor-pointer">🔔 重要提醒</label></div>
+            <div><input type="radio" name="cal-cat" id="cc-exam" value="exam" class="chip-radio hidden"><label for="cc-exam" class="block text-center py-2.5 bg-purple-50 border-2 border-purple-300 text-purple-800 rounded-xl font-black text-xs cursor-pointer">💉 抽血/檢查</label></div>
+            <div><input type="radio" name="cal-cat" id="cc-other" value="other" class="chip-radio hidden"><label for="cc-other" class="block text-center py-2.5 bg-slate-100 border-2 border-slate-300 text-slate-800 rounded-xl font-black text-xs cursor-pointer">📝 其他事項</label></div>
+          </div>
         </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1">日期：</label>
+            <input type="date" id="cal-date" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-black text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1">時間：</label>
+            <input type="time" id="cal-time" value="09:00" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 font-black text-sm">
+          </div>
+        </div>
+
         <div class="mb-4">
-          <label class="block text-sm font-black text-slate-700 mb-1">預約日期：</label>
-          <input type="date" id="cal-date" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900">
+          <label class="block text-sm font-black text-slate-800 mb-1">事項內容：</label>
+          <input type="text" id="cal-title" placeholder="例如：三軍總醫院 心臟內科 陳醫師" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-sm">
         </div>
-        <button onclick="saveCalRecord()" class="w-full bg-[#1b4d3e] hover:bg-[#12352b] text-white font-black text-xl py-4 rounded-2xl shadow-xl border-2 border-emerald-600">
-          <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 儲存行事曆事件
+
+        <button onclick="saveCalRecord()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black text-xl py-4 rounded-2xl shadow-lg">
+          <i class="fa-solid fa-calendar-check mr-2"></i> 新增至行事曆
         </button>
       </div>
-      <div class="bg-white rounded-3xl p-5 shadow-xl border-2 border-[#b8d0c7]">
-        <h2 class="text-xl font-black text-[#1b4d3e] mb-3">行事曆清單</h2>
-        <div id="cal-history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
+
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200">
+        <h2 class="text-lg font-black text-purple-800 mb-3">近期行程與提醒</h2>
+        <div id="cal-history-list" class="flex flex-col gap-2.5 max-h-80 overflow-y-auto"></div>
       </div>
     </section>
+
   </main>
 
   <script>
-    // 💡 請將您的 Firebase 專屬設定貼在下方大括號內：
+    // 💡 請填入您的 Firebase 專案設定
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+     // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAVcMCi29gTxzbgNzLMqTPiT4EEZ40QTIo",
+  authDomain: "elder-health-tracker.firebaseapp.com",
+  projectId: "elder-health-tracker",
+  storageBucket: "elder-health-tracker.firebasestorage.app",
+  messagingSenderId: "633495130100",
+  appId: "1:633495130100:web:b3771babd81c56910ab3a1",
+  measurementId: "G-5H22X5TH1N"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+    let db = null;
+    try {
+      if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      }
+    } catch (e) { console.log("Firebase 尚未填入真實金鑰，啟用本地高速儲存模式"); }
 
     const DEFAULT_USERS = ['王爺爺', '李奶奶', '媽咪'];
     let currentActiveUser = '王爺爺';
     let currentInputMode = 'sys';
     let currentSlot = 'morning';
+    let currentMedPhotoBase64 = "";
+
+    // 疼痛部位階層資料
+    const PAIN_SUBPARTS = {
+      '頭部': ['前額', '頭頂', '太陽穴', '後腦勺', '眼眶/臉部', '脖子'],
+      '軀幹': ['胸口', '上背部', '下背' ,腰部', '腹部', 胃部', '臀部/尾椎'],
+      '上肢': ['肩膀', '上臂', '手肘', '前臂', '手腕/手指'],
+      '下肢': ['大腿', '膝蓋', '小腿', '腳踝', '腳底/腳趾']
+    };
+
+    // 行事曆分類樣式表
+    const CAL_STYLES = {
+      hospital: { label: '🏥 醫院回診', bg: 'bg-rose-50', border: 'border-rose-400', badge: 'bg-rose-500 text-white' },
+      home:     { label: '🏠 回家/聚餐', bg: 'bg-emerald-50', border: 'border-emerald-400', badge: 'bg-emerald-500 text-white' },
+      med:      { label: '💊 領慢性處方', bg: 'bg-sky-50', border: 'border-sky-400', badge: 'bg-sky-500 text-white' },
+      remind:   { label: '🔔 重要提醒', bg: 'bg-amber-50', border: 'border-amber-400', badge: 'bg-amber-500 text-white' },
+      exam:     { label: '💉 抽血/檢查', bg: 'bg-purple-50', border: 'border-purple-400', badge: 'bg-purple-500 text-white' },
+      other:    { label: '📝 其他事項', bg: 'bg-slate-50', border: 'border-slate-300', badge: 'bg-slate-500 text-white' }
+    };
 
     window.onload = function() {
       initDefaultDateTime();
       initUserSelect();
+      updatePainSubParts();
+      evaluateBPStatus();
       initChart();
       loadUserData();
     };
@@ -273,7 +528,6 @@
       }
     }
 
-    // 分頁切換邏輯
     function switchTab(tab) {
       ['bp', 'pain', 'med', 'cal'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
@@ -285,17 +539,18 @@
       document.getElementById(`tab-${tab}-btn`).classList.add('active');
     }
 
+    // ==================== 1. 血壓邏輯與最新國健署標準 ====================
     function setTimeSlot(slot) {
       currentSlot = slot;
-      document.getElementById('time-morning').className = slot === 'morning' ? "py-3 rounded-2xl font-black text-base border-2 border-amber-500 bg-amber-100 text-amber-900 shadow" : "py-3 rounded-2xl font-black text-base border-2 border-slate-300 bg-slate-100 text-slate-600";
-      document.getElementById('time-evening').className = slot === 'evening' ? "py-3 rounded-2xl font-black text-base border-2 border-indigo-500 bg-indigo-100 text-indigo-900 shadow" : "py-3 rounded-2xl font-black text-base border-2 border-slate-300 bg-slate-100 text-slate-600";
+      document.getElementById('time-morning').className = slot === 'morning' ? "py-3 rounded-2xl font-black text-base border-2 border-amber-400 bg-amber-100 text-amber-900 shadow-sm" : "py-3 rounded-2xl font-black text-base border-2 border-slate-200 bg-slate-50 text-slate-600";
+      document.getElementById('time-evening').className = slot === 'evening' ? "py-3 rounded-2xl font-black text-base border-2 border-indigo-400 bg-indigo-100 text-indigo-900 shadow-sm" : "py-3 rounded-2xl font-black text-base border-2 border-slate-200 bg-slate-50 text-slate-600";
     }
 
     function setActiveInput(mode) {
       currentInputMode = mode;
-      document.getElementById('box-sys').className = mode === 'sys' ? "p-3 bg-rose-50 border-4 border-rose-600 rounded-2xl text-center cursor-pointer shadow-md" : "p-3 bg-rose-50 border-2 border-rose-300 rounded-2xl text-center cursor-pointer opacity-80";
-      document.getElementById('box-dia').className = mode === 'dia' ? "p-3 bg-sky-50 border-4 border-sky-600 rounded-2xl text-center cursor-pointer shadow-md" : "p-3 bg-sky-50 border-2 border-sky-300 rounded-2xl text-center cursor-pointer opacity-80";
-      document.getElementById('box-pulse').className = mode === 'pulse' ? "p-3 bg-amber-50 border-4 border-amber-600 rounded-2xl text-center cursor-pointer shadow-md mb-4" : "p-3 bg-amber-50 border-2 border-amber-300 rounded-2xl text-center cursor-pointer opacity-80 mb-4";
+      document.getElementById('box-sys').className = mode === 'sys' ? "p-3 bg-rose-50 border-4 border-rose-500 rounded-2xl text-center cursor-pointer shadow" : "p-3 bg-rose-50 border-2 border-rose-200 rounded-2xl text-center cursor-pointer opacity-80";
+      document.getElementById('box-dia').className = mode === 'dia' ? "p-3 bg-sky-50 border-4 border-sky-500 rounded-2xl text-center cursor-pointer shadow" : "p-3 bg-sky-50 border-2 border-sky-200 rounded-2xl text-center cursor-pointer opacity-80";
+      document.getElementById('box-pulse').className = mode === 'pulse' ? "p-2.5 bg-amber-50 border-4 border-amber-500 rounded-2xl text-center cursor-pointer shadow mb-4" : "p-2.5 bg-amber-50 border-2 border-amber-200 rounded-2xl text-center cursor-pointer opacity-80 mb-4";
     }
 
     function pressKey(key) {
@@ -304,181 +559,292 @@
       if (key === 'clear') el.innerText = '0';
       else if (key === 'back') el.innerText = cur.length > 1 ? cur.slice(0, -1) : '0';
       else el.innerText = cur === '0' ? String(key) : cur + key;
+      evaluateBPStatus();
     }
 
-    // 🚀 儲存血壓
-    async function saveBPRecord() {
-      const record = {
+    // 🩺 根據最新國健署 (722 居家血壓標準) 給予即時警語與衛教意見
+    function evaluateBPStatus() {
+      const sys = parseInt(document.getElementById('val-sys').innerText) || 0;
+      const dia = parseInt(document.getElementById('val-dia').innerText) || 0;
+      const box = document.getElementById('bp-alert-box');
+      const title = document.getElementById('bp-alert-title');
+      const desc = document.getElementById('bp-alert-desc');
+
+      if (sys >= 180 || dia >= 120) {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-red-100 border-red-600 text-red-950 animate-pulse";
+        title.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i> 🚨 警訊：重度高血壓危象！`;
+        desc.innerText = "收縮壓 ≥180 或舒張壓 ≥120！請立刻坐下休息 5 分鐘後重測，若伴隨胸痛、頭暈、手腳無力，請立即就醫！";
+      } else if (sys >= 140 || dia >= 90) {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-rose-100 border-rose-500 text-rose-950";
+        title.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600 text-xl"></i> ⚠️ 第二期高血壓 (≥140 / ≥90)`;
+        desc.innerText = "血壓明顯偏高！請遵守「722原則」連續記錄，勿自行停藥，並攜帶此紀錄表儘快回診與醫師討論調整用藥。";
+      } else if (sys >= 130 || dia >= 80) {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-orange-100 border-orange-500 text-orange-950";
+        title.innerHTML = `<i class="fa-solid fa-bell text-orange-600 text-xl"></i> 🟠 第一期高血壓 (國健署警戒線 130/80)`;
+        desc.innerText = "國健署最新居家血壓標準為 130/80 mmHg！目前已達高血壓標準，建議減鹽飲食、規律有氧運動並持續每日早晚監測。";
+      } else if (sys >= 120 && sys <= 129 && dia < 80) {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-amber-100 border-amber-400 text-amber-950";
+        title.innerHTML = `<i class="fa-solid fa-circle-info text-amber-600 text-xl"></i> 🟡 血壓偏高 (120~129 / <80)`;
+        desc.innerText = "處於高血壓前期邊緣，建議多攝取蔬果（得舒飲食）、減少加工食品與熬夜，預防演變為高血壓。";
+      } else if (sys < 90 || dia < 60) {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-sky-100 border-sky-500 text-sky-950";
+        title.innerHTML = `<i class="fa-solid fa-arrow-trend-down text-sky-600 text-xl"></i> 🔵 血壓偏低 (<90 / <60)`;
+        desc.innerText = "血壓數值較低，起身時請放慢動作避免姿勢性低血壓頭暈；若有冒冷汗、無力感請補充水分並諮詢醫師。";
+      } else {
+        box.className = "p-4 rounded-2xl border-2 mb-4 bg-emerald-50 border-emerald-400 text-emerald-950";
+        title.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i> 🟢 血壓正常 (<120 / <80)`;
+        desc.innerText = "符合國健署理想居家血壓標準！請繼續維持健康生活習慣與規律測量。";
+      }
+    }
+
+    // ==================== 2. 疼痛階層勾選動態邏輯 ====================
+    function updatePainSubParts() {
+      const major = document.querySelector('input[name="pain-major"]:checked').value;
+      const list = PAIN_SUBPARTS[major] || [];
+      const container = document.getElementById('pain-subparts-container');
+      container.innerHTML = list.map((item, idx) => `
+        <div>
+          <input type="checkbox" name="pain-sub" id="psub-${idx}" value="${item}" class="chip-checkbox hidden">
+          <label for="psub-${idx}" class="inline-block px-3 py-1.5 bg-white border border-orange-300 rounded-xl font-black text-xs text-slate-800 cursor-pointer">${item}</label>
+        </div>
+      `).join('');
+    }
+
+    // ==================== 3. 用藥圖片預覽與壓縮 ====================
+    function previewMedPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxW = 240;
+          const scale = maxW / img.width;
+          canvas.width = maxW;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          currentMedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          const preview = document.getElementById('med-photo-preview');
+          preview.src = currentMedPhotoBase64;
+          preview.classList.remove('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ==================== 儲存與讀取資料 (支援雲端與本地雙備援) ====================
+    async function saveDataToStorage(record) {
+      record.id = Date.now().toString();
+      record.user = currentActiveUser;
+      // 1. 先存本地確保秒同步無延遲
+      const key = `health_data_${currentActiveUser}`;
+      const existing = JSON.parse(localStorage.getItem(key)) || [];
+      existing.unshift(record);
+      localStorage.setItem(key, JSON.stringify(existing));
+
+      // 2. 若有設定 Firebase 則同步上傳雲端
+      if (db) {
+        try {
+          await db.collection("health_records").add(record);
+        } catch (e) { console.log("雲端同步稍後重試:", e); }
+      }
+      loadUserData();
+    }
+
+    function saveBPRecord() {
+      saveDataToStorage({
+        type: 'bp',
         time: `${document.getElementById('bp-date-input').value} ${document.getElementById('bp-time-input').value}`,
-        user: currentActiveUser,
         sys: parseInt(document.getElementById('val-sys').innerText),
         dia: parseInt(document.getElementById('val-dia').innerText),
         pulse: parseInt(document.getElementById('val-pulse').innerText),
-        slot: currentSlot === 'morning' ? '早上' : '晚上',
-        type: 'bp',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      try {
-        await db.collection("health_records").add(record);
-        alert(`已成功儲存並同步 ${currentActiveUser} 的血壓紀錄！`);
-        loadUserData();
-      } catch (e) {
-        alert("儲存失敗，請檢查網路連線。");
-      }
+        slot: currentSlot === 'morning' ? '早上' : '晚上'
+      });
+      alert("✅ 血壓紀錄已儲存！");
     }
 
-    // 🚀 儲存疼痛
-    async function savePainRecord() {
-      const record = {
-        user: currentActiveUser,
-        part: document.getElementById('pain-part').value,
-        level: document.getElementById('pain-level').value,
-        note: document.getElementById('pain-note').value,
+    function savePainRecord() {
+      const major = document.querySelector('input[name="pain-major"]:checked').value;
+      const subs = Array.from(document.querySelectorAll('input[name="pain-sub"]:checked')).map(e => e.value);
+      const sides = Array.from(document.querySelectorAll('input[name="pain-side"]:checked')).map(e => e.value);
+      const types = Array.from(document.querySelectorAll('input[name="pain-type"]:checked')).map(e => e.value);
+      const reliefs = Array.from(document.querySelectorAll('input[name="pain-relief"]:checked')).map(e => e.value);
+
+      saveDataToStorage({
         type: 'pain',
-        time: new Date().toLocaleString(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      try {
-        await db.collection("health_records").add(record);
-        alert("疼痛紀錄已同步！");
-        loadUserData();
-      } catch (e) { alert("儲存失敗"); }
+        time: new Date().toLocaleString('zh-TW', { hour12: false }),
+        major,
+        subs: subs.length ? subs : ['未指定細部'],
+        sides: sides.length ? sides : ['未指定側別'],
+        types: types.length ? types : ['一般疼痛'],
+        freq: document.getElementById('pain-freq').value,
+        level: document.getElementById('pain-level').value,
+        reliefs,
+        note: document.getElementById('pain-note').value
+      });
+      alert("✅ 疼痛紀錄已儲存！");
     }
 
-    // 🚀 儲存用藥
-    async function saveMedRecord() {
-      const times = Array.from(document.querySelectorAll('input[name="med-time"]:checked')).map(el => el.value);
-      const record = {
-        user: currentActiveUser,
-        name: document.getElementById('med-name').value,
-        medTimes: times,
+    function saveMedRecord() {
+      const name = document.getElementById('med-name').value.trim();
+      if (!name) { alert("請輸入藥品名稱！"); return; }
+      const times = Array.from(document.querySelectorAll('input[name="med-time"]:checked')).map(e => e.value);
+      saveDataToStorage({
         type: 'med',
-        time: new Date().toLocaleString(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      try {
-        await db.collection("health_records").add(record);
-        alert("用藥紀錄已同步！");
-        loadUserData();
-      } catch (e) { alert("儲存失敗"); }
+        name,
+        photo: currentMedPhotoBase64,
+        medTimes: times.length ? times : ['依醫囑服用'],
+        pinned: document.getElementById('med-pin-check').checked
+      });
+      document.getElementById('med-name').value = "";
+      currentMedPhotoBase64 = "";
+      document.getElementById('med-photo-preview').classList.add('hidden');
+      alert("✅ 用藥設定已儲存！");
     }
 
-    // 🚀 儲存行事曆
-    async function saveCalRecord() {
-      const record = {
-        user: currentActiveUser,
-        title: document.getElementById('cal-title').value,
-        date: document.getElementById('cal-date').value,
+    function saveCalRecord() {
+      const title = document.getElementById('cal-title').value.trim();
+      if (!title) { alert("請輸入行程內容！"); return; }
+      const cat = document.querySelector('input[name="cal-cat"]:checked').value;
+      saveDataToStorage({
         type: 'cal',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      try {
-        await db.collection("health_records").add(record);
-        alert("行事曆事件已同步！");
-        loadUserData();
-      } catch (e) { alert("儲存失敗"); }
+        cat,
+        date: document.getElementById('cal-date').value,
+        time: document.getElementById('cal-time').value,
+        title
+      });
+      document.getElementById('cal-title').value = "";
+      alert("✅ 行事曆行程已新增！");
     }
 
-    // 🚀 讀取資料
-    async function loadUserData() {
+    function deleteRecord(id) {
+      if (!confirm("確定要刪除這筆紀錄嗎？")) return;
+      const key = `health_data_${currentActiveUser}`;
+      const existing = JSON.parse(localStorage.getItem(key)) || [];
+      localStorage.setItem(key, JSON.stringify(existing.filter(item => item.id !== id)));
+      loadUserData();
+    }
+
+    function loadUserData() {
       const badge = document.getElementById('sync-status-badge');
-      if (badge) badge.innerHTML = `<span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span><span>同步中...</span>`;
+      badge.innerHTML = db
+        ? `<span class="w-2.5 h-2.5 rounded-full bg-emerald-300"></span><span>Firebase 雲端同步</span>`
+        : `<span class="w-2.5 h-2.5 rounded-full bg-yellow-300"></span><span>本機即時儲存</span>`;
 
-      try {
-        const snapshot = await db.collection("health_records")
-          .where("user", "==", currentActiveUser)
-          .orderBy("createdAt", "desc")
-          .get();
+      const key = `health_data_${currentActiveUser}`;
+      const allData = JSON.parse(localStorage.getItem(key)) || [];
 
-        const bpRecords = [];
-        const painRecords = [];
-        const medRecords = [];
-        const calRecords = [];
-
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          d.id = doc.id;
-          if (d.type === 'bp' || d.sys) bpRecords.push(d);
-          else if (d.type === 'pain') painRecords.push(d);
-          else if (d.type === 'med') medRecords.push(d);
-          else if (d.type === 'cal') calRecords.push(d);
-        });
-
-        renderBPUI(bpRecords);
-        renderPainUI(painRecords);
-        renderMedUI(medRecords);
-        renderCalUI(calRecords);
-
-        if (badge) badge.innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-400"></span><span>Firebase 已同步</span>`;
-      } catch (e) {
-        if (badge) badge.innerHTML = `<span class="w-3 h-3 rounded-full bg-amber-500"></span><span>離線模式</span>`;
-      }
+      renderBPUI(allData.filter(d => d.type === 'bp'));
+      renderPainUI(allData.filter(d => d.type === 'pain'));
+      renderMedUI(allData.filter(d => d.type === 'med'));
+      renderCalUI(allData.filter(d => d.type === 'cal'));
     }
 
+    // ==================== 畫面渲染函數 ====================
     function renderBPUI(records) {
       const list = document.getElementById('bp-history-list');
-      list.innerHTML = records.length === 0 ? '<div class="text-slate-500 font-bold text-center py-3">尚無血壓紀錄</div>' : records.map(r => `
-        <div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-300 shadow-sm">
-          <div>
-            <span class="text-xs font-black text-[#1b4d3e]">${r.time || ''} (${r.slot || ''})</span>
-            <div class="text-xl font-black text-slate-900">${r.sys} / ${r.dia} <span class="text-xs text-slate-600 font-bold">mmHg (脈搏:${r.pulse})</span></div>
-          </div>
-          <button onclick="deleteRecord('${r.id}')" class="text-rose-700 font-black text-xs bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-lg border border-rose-300 shadow">刪除</button>
-        </div>
-      `).join('');
+      list.innerHTML = records.length === 0
+        ? '<div class="text-slate-400 font-bold text-center py-4">尚無血壓紀錄</div>'
+        : records.map(r => {
+            const isHigh = r.sys >= 130 || r.dia >= 80;
+            return `
+              <div class="flex items-center justify-between p-3 ${isHigh ? 'bg-rose-50 border-rose-300' : 'bg-emerald-50 border-emerald-200'} rounded-2xl border-2">
+                <div>
+                  <span class="text-xs font-black text-slate-600">${r.time} (${r.slot})</span>
+                  <div class="text-xl font-black ${isHigh ? 'text-rose-700' : 'text-emerald-800'}">
+                    ${r.sys} / ${r.dia} <span class="text-xs font-bold text-slate-600">mmHg (脈搏:${r.pulse})</span>
+                  </div>
+                </div>
+                <button onclick="deleteRecord('${r.id}')" class="text-rose-600 font-black text-xs bg-white px-3 py-1.5 rounded-xl border border-rose-200 shadow-sm">刪除</button>
+              </div>`;
+          }).join('');
       updateChart(records);
     }
 
     function renderPainUI(records) {
       const list = document.getElementById('pain-history-list');
-      list.innerHTML = records.length === 0 ? '<div class="text-slate-500 font-bold text-center py-3">尚無疼痛紀錄</div>' : records.map(r => `
-        <div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-300 shadow-sm">
-          <div>
-            <span class="text-xs font-black text-[#1b4d3e]">${r.time}</span>
-            <div class="text-base font-black text-slate-900">部位：${r.part} (疼痛度: ${r.level}分)</div>
-            <div class="text-xs text-slate-700 font-bold">${r.note || ''}</div>
-          </div>
-          <button onclick="deleteRecord('${r.id}')" class="text-rose-700 font-black text-xs bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-300">刪除</button>
-        </div>
-      `).join('');
+      list.innerHTML = records.length === 0
+        ? '<div class="text-slate-400 font-bold text-center py-4">尚無疼痛紀錄</div>'
+        : records.map(r => `
+            <div class="p-3.5 bg-orange-50 rounded-2xl border-2 border-orange-200 flex justify-between items-start">
+              <div class="flex flex-col gap-1">
+                <span class="text-[11px] font-black text-orange-700">${r.time}</span>
+                <div class="text-base font-black text-slate-900">
+                  【${r.major}】${r.sides.join('、')} - ${r.subs.join('、')}
+                </div>
+                <div class="text-xs font-bold text-rose-700">
+                  型態：${r.types.join('、')} ｜ 頻率：${r.freq} ｜ 痛度：${r.level}分
+                </div>
+                ${r.reliefs && r.reliefs.length ? `<div class="text-xs font-black text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-200 inline-block mt-1">改善處置：${r.reliefs.join('、')}</div>` : ''}
+                ${r.note ? `<div class="text-xs text-slate-600 font-bold">備註：${r.note}</div>` : ''}
+              </div>
+              <button onclick="deleteRecord('${r.id}')" class="text-rose-600 font-black text-xs bg-white px-2.5 py-1 rounded-lg border border-rose-200">刪除</button>
+            </div>
+          `).join('');
     }
 
     function renderMedUI(records) {
+      // 1. 渲染頂部置頂看板
+      const pinned = records.filter(r => r.pinned);
+      const pinBox = document.getElementById('pinned-med-list');
+      pinBox.innerHTML = pinned.length === 0
+        ? '<div class="text-xs font-bold text-amber-800/80 py-1">尚無設定置頂藥物，請至「用藥」頁籤新增。</div>'
+        : pinned.map(r => `
+            <div class="flex-shrink-0 bg-white border-2 border-amber-300 rounded-xl p-2 flex items-center gap-2.5 shadow-sm min-w-[200px]">
+              ${r.photo ? `<img src="${r.photo}" class="w-12 h-12 rounded-lg object-cover border border-slate-200">` : `<div class="w-12 h-12 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center text-xl"><i class="fa-solid fa-pills"></i></div>`}
+              <div>
+                <div class="font-black text-sm text-slate-900">${r.name}</div>
+                <div class="text-[11px] font-black text-orange-600 mt-0.5">${r.medTimes.join('・')}</div>
+              </div>
+            </div>
+          `).join('');
+
+      // 2. 渲染完整藥物列表
       const list = document.getElementById('med-history-list');
-      list.innerHTML = records.length === 0 ? '<div class="text-slate-500 font-bold text-center py-3">尚無用藥紀錄</div>' : records.map(r => `
-        <div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-300 shadow-sm">
-          <div>
-            <span class="text-xs font-black text-[#1b4d3e]">${r.time}</span>
-            <div class="text-base font-black text-slate-900">${r.name}</div>
-            <div class="text-xs text-emerald-800 font-black">時段：${(r.medTimes || []).join(', ')}</div>
-          </div>
-          <button onclick="deleteRecord('${r.id}')" class="text-rose-700 font-black text-xs bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-300">刪除</button>
-        </div>
-      `).join('');
+      list.innerHTML = records.length === 0
+        ? '<div class="text-slate-400 font-bold text-center py-4">尚無用藥紀錄</div>'
+        : records.map(r => `
+            <div class="p-3 bg-sky-50 rounded-2xl border-2 border-sky-200 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-xl object-cover border-2 border-white shadow">` : `<div class="w-16 h-16 rounded-xl bg-white text-sky-500 flex items-center justify-center text-2xl shadow"><i class="fa-solid fa-capsules"></i></div>`}
+                <div>
+                  <div class="font-black text-base text-slate-900">${r.name} ${r.pinned ? '<span class="text-xs bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded ml-1">📌置頂</span>' : ''}</div>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    ${r.medTimes.map(t => `<span class="text-xs font-black bg-sky-500 text-white px-2 py-0.5 rounded-lg">${t}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <button onclick="deleteRecord('${r.id}')" class="text-rose-600 font-black text-xs bg-white px-2.5 py-1.5 rounded-xl border border-rose-200">刪除</button>
+            </div>
+          `).join('');
     }
 
     function renderCalUI(records) {
       const list = document.getElementById('cal-history-list');
-      list.innerHTML = records.length === 0 ? '<div class="text-slate-500 font-bold text-center py-3">尚無行事曆事件</div>' : records.map(r => `
-        <div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-300 shadow-sm">
-          <div>
-            <span class="text-xs font-black text-indigo-900">日期：${r.date}</span>
-            <div class="text-base font-black text-slate-900">${r.title}</div>
-          </div>
-          <button onclick="deleteRecord('${r.id}')" class="text-rose-700 font-black text-xs bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-300">刪除</button>
-        </div>
-      `).join('');
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      list.innerHTML = sorted.length === 0
+        ? '<div class="text-slate-400 font-bold text-center py-4">尚無行事曆行程</div>'
+        : sorted.map(r => {
+            const st = CAL_STYLES[r.cat] || CAL_STYLES.other;
+            return `
+              <div class="p-3.5 ${st.bg} rounded-2xl border-2 ${st.border} flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full ${st.badge}">${st.label}</span>
+                    <span class="text-xs font-black text-slate-700">${r.date} ${r.time || ''}</span>
+                  </div>
+                  <div class="text-base font-black text-slate-900">${r.title}</div>
+                </div>
+                <button onclick="deleteRecord('${r.id}')" class="text-rose-600 font-black text-xs bg-white px-2.5 py-1.5 rounded-xl border border-rose-200">刪除</button>
+              </div>
+            `;
+          }).join('');
     }
 
-    async function deleteRecord(id) {
-      if (confirm("確定要刪除這筆紀錄嗎？")) {
-        try {
-          await db.collection("health_records").doc(id).delete();
-          loadUserData();
-        } catch (e) { alert("刪除失敗"); }
-      }
-    }
-
+    // ==================== 趨勢圖表 ====================
     let bpChart;
     function initChart() {
       const ctx = document.getElementById('bpChart').getContext('2d');
@@ -492,10 +858,10 @@
     function updateChart(records) {
       if (!bpChart) return;
       const recent = [...records].reverse().slice(-14);
-      bpChart.data.labels = recent.map(r => `${r.date ? r.date.slice(5) : ''} ${r.slot || ''}`);
+      bpChart.data.labels = recent.map(r => `${r.time.slice(5, 10)} ${r.slot}`);
       bpChart.data.datasets = [
-        { label: '收縮壓', data: recent.map(r => r.sys), borderColor: '#e11d48', borderWidth: 3, tension: 0.2 },
-        { label: '舒張壓', data: recent.map(r => r.dia), borderColor: '#0284c7', borderWidth: 3, tension: 0.2 }
+        { label: '收縮壓', data: recent.map(r => r.sys), borderColor: '#f43f5e', backgroundColor: '#f43f5e', borderWidth: 3, tension: 0.25 },
+        { label: '舒張壓', data: recent.map(r => r.dia), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9', borderWidth: 3, tension: 0.25 }
       ];
       bpChart.update();
     }
