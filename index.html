@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>長輩健康守護與行事曆 - 全功能修復版</title>
+  <title>長輩健康守護與行事曆 - 升級全功能版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -18,9 +18,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* =================================================================
-       🎨 【顏色自訂區】高飽和度鮮豔明亮色彩配置
-       ================================================================= */
     :root {
       --bg-page: #eff6f3;          /* 背景色 */
       --header-bg: #059669;        /* 頂部標題列 */
@@ -219,7 +216,7 @@
       </div>
     </section>
 
-    <!-- ==================== 2. 疼痛紀錄頁籤 ==================== -->
+    <!-- ==================== 2. 疼痛紀錄頁籤 (含動態用藥與血壓連結) ==================== -->
     <section id="tab-pain" class="tab-content hidden flex-col gap-5">
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-orange-300">
         <h2 class="text-xl font-black text-orange-700 border-b-2 border-orange-100 pb-2 mb-4">
@@ -283,17 +280,21 @@
           </div>
         </div>
 
+        <!-- 改善方式與動態用藥勾選區 -->
         <div class="mb-4 bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
-          <label class="block text-sm font-black text-emerald-950 mb-2">6. 改善方式 / 搭配藥物 (可多選)：</label>
-          <div class="grid grid-cols-3 gap-2">
-            <div><input type="checkbox" name="pain-relief" id="pr-1" value="口服止痛藥" class="chip-checkbox hidden"><label for="pr-1" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">💊 口服止痛藥</label></div>
-            <div><input type="checkbox" name="pain-relief" id="pr-2" value="貼痠痛藥布" class="chip-checkbox hidden"><label for="pr-2" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🩹 貼痠痛藥布</label></div>
-            <div><input type="checkbox" name="pain-relief" id="pr-3" value="熱敷舒緩" class="chip-checkbox hidden"><label for="pr-3" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">♨️ 熱敷舒緩</label></div>
-            <div><input type="checkbox" name="pain-relief" id="pr-4" value="冰敷消腫" class="chip-checkbox hidden"><label for="pr-4" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🧊 冰敷消腫</label></div>
-            <div><input type="checkbox" name="pain-relief" id="pr-5" value="臥床休息" class="chip-checkbox hidden"><label for="pr-5" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">🛏️ 臥床休息</label></div>
-            <div><input type="checkbox" name="pain-relief" id="pr-6" value="輕柔按摩" class="chip-checkbox hidden"><label for="pr-6" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer">👐 輕柔按摩</label></div>
+          <label class="block text-sm font-black text-emerald-950 mb-2">6. 改善方式 / 搭配藥物 (含長輩專屬用藥)：</label>
+          <div id="dynamic-pain-relief-container" class="grid grid-cols-3 gap-2 mb-2">
+            <!-- 這裡會由 JS 動態載入使用者儲存的藥物以及預設止痛貼布/熱敷選項 -->
           </div>
-          <input type="text" id="pain-note" placeholder="補充說明 (例如：吃了止痛藥後改善)" class="w-full mt-2 bg-white border border-emerald-300 rounded-xl p-2.5 text-xs font-bold text-slate-900">
+          <input type="text" id="pain-note" placeholder="補充說明 (例如：吃完藥後 30 分鐘緩解)" class="w-full mt-2 bg-white border border-emerald-300 rounded-xl p-2.5 text-xs font-bold text-slate-900">
+        </div>
+
+        <!-- 🔗 連結血壓紀錄選項 -->
+        <div class="mb-4 flex items-center gap-2 bg-sky-50 p-3 rounded-xl border border-sky-300">
+          <input type="checkbox" id="pain-link-bp" class="w-5 h-5 accent-sky-600">
+          <label for="pain-link-bp" class="font-black text-sm text-sky-950 cursor-pointer">
+            🔗 同時連結紀錄當時的最新血壓數值
+          </label>
         </div>
 
         <button type="button" id="save-pain-btn" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black text-xl py-4 rounded-2xl shadow-lg">
@@ -316,7 +317,7 @@
 
         <div class="mb-3">
           <label class="block text-sm font-black text-slate-900 mb-1">藥品名稱 / 用途：</label>
-          <input type="text" id="med-name" placeholder="例如：降血壓藥 (1顆)" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-sm text-slate-900">
+          <input type="text" id="med-name" placeholder="例如：普拿疼止痛藥 / 降血壓藥" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-black text-sm text-slate-900">
         </div>
 
         <div class="mb-4 bg-sky-50 p-3 rounded-2xl border border-sky-200">
@@ -359,8 +360,18 @@
       </div>
     </section>
 
-    <!-- ==================== 4. 行事曆頁籤 ==================== -->
+    <!-- ==================== 4. 行事曆頁籤 (含互動式小行事曆) ==================== -->
     <section id="tab-cal" class="tab-content hidden flex-col gap-5">
+      <!-- 🗓️ 互動式月曆檢視區 -->
+      <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-300">
+        <h2 class="text-lg font-black text-purple-900 mb-3 flex items-center justify-between">
+          <span><i class="fa-solid fa-calendar-days text-purple-600 mr-2"></i>月曆檢視 (點擊日期看行程)</span>
+        </h2>
+        <div id="mini-calendar-container" class="bg-purple-50/50 p-3 rounded-2xl border border-purple-200">
+          <!-- 動態生成小月曆 -->
+        </div>
+      </div>
+
       <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-300">
         <h2 class="text-xl font-black text-purple-800 border-b-2 border-purple-100 pb-2 mb-4">
           <i class="fa-solid fa-calendar-plus text-purple-600 mr-2"></i>新增行事曆行程
@@ -432,6 +443,9 @@
     let currentSlot = 'morning';
     let currentMedPhotoBase64 = "";
 
+    let calCurrentYear = new Date().getFullYear();
+    let calCurrentMonth = new Date().getMonth();
+
     const PAIN_SUBPARTS = {
       '頭部': ['前額/頭頂', '太陽穴', '後腦勺', '眼眶/臉部', '脖子/肩頸'],
       '軀幹': ['胸口', '上背部', '下背/腰部', '腹部/胃部', '臀部/尾椎'],
@@ -448,7 +462,6 @@
       other:    { label: '📝 其他事項', bg: 'bg-slate-50', border: 'border-slate-300', badge: 'bg-slate-600 text-white' }
     };
 
-    // 🛡️ 確保 DOM 載入後才綁定所有按鈕事件，徹底解決按鈕沒反應的問題
     document.addEventListener("DOMContentLoaded", function() {
       initDefaultDateTime();
       initUserSelect();
@@ -481,47 +494,39 @@
     }
 
     function bindAllEvents() {
-      // 1. 長輩切換與新增
       document.getElementById('user-select')?.addEventListener('change', (e) => {
         currentActiveUser = e.target.value;
         loadUserData();
       });
       document.getElementById('btn-add-user')?.addEventListener('click', promptAddUser);
 
-      // 2. 頁籤切換
       document.getElementById('tab-bp-btn')?.addEventListener('click', () => switchTab('bp'));
       document.getElementById('tab-pain-btn')?.addEventListener('click', () => switchTab('pain'));
       document.getElementById('tab-med-btn')?.addEventListener('click', () => switchTab('med'));
       document.getElementById('tab-cal-btn')?.addEventListener('click', () => switchTab('cal'));
       document.getElementById('goto-med-btn')?.addEventListener('click', () => switchTab('med'));
 
-      // 3. 血壓時段切換
       document.getElementById('time-morning')?.addEventListener('click', () => setTimeSlot('morning'));
       document.getElementById('time-evening')?.addEventListener('click', () => setTimeSlot('evening'));
 
-      // 4. 血壓數值方塊點擊
       document.getElementById('box-sys')?.addEventListener('click', () => setActiveInput('sys'));
       document.getElementById('box-dia')?.addEventListener('click', () => setActiveInput('dia'));
       document.getElementById('box-pulse')?.addEventListener('click', () => setActiveInput('pulse'));
 
-      // 5. 數字鍵盤
       document.querySelectorAll('.key-btn').forEach(btn => {
         btn.addEventListener('click', () => pressKey(btn.getAttribute('data-val')));
       });
 
-      // 6. 儲存按鈕
       document.getElementById('save-bp-btn')?.addEventListener('click', saveBPRecord);
       document.getElementById('reload-bp-btn')?.addEventListener('click', loadUserData);
       document.getElementById('save-pain-btn')?.addEventListener('click', savePainRecord);
       document.getElementById('save-med-btn')?.addEventListener('click', saveMedRecord);
       document.getElementById('save-cal-btn')?.addEventListener('click', saveCalRecord);
 
-      // 7. 疼痛部位大項目連動
       document.querySelectorAll('input[name="pain-major"]').forEach(radio => {
         radio.addEventListener('change', updatePainSubParts);
       });
 
-      // 8. 藥品照片上傳
       document.getElementById('med-photo-input')?.addEventListener('change', previewMedPhoto);
     }
 
@@ -602,7 +607,7 @@
         desc.innerText = "收縮壓 ≥180 或舒張壓 ≥120！請立刻坐下休息 5 分鐘後重測，若伴隨胸痛或頭暈請立即就醫！";
       } else if (sys >= 140 || dia >= 90) {
         box.className = "p-4 rounded-2xl border-2 mb-4 bg-rose-100 border-rose-500 text-rose-950";
-        title.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600 text-xl"></i> ⚠️ 第二期高血壓 (≥140 / ≥90)`;
+        title.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600 text-xl"></i> ⚠️ 第二期高血壓 (≥140 / ≥90)";`;
         desc.innerText = "血壓明顯偏高！請遵守「722原則」測量，切勿自行停藥，並攜帶紀錄儘快回診與醫師討論。";
       } else if (sys >= 130 || dia >= 80) {
         box.className = "p-4 rounded-2xl border-2 mb-4 bg-orange-100 border-orange-500 text-orange-950";
@@ -634,6 +639,28 @@
         <div>
           <input type="checkbox" name="pain-sub" id="psub-${idx}" value="${item}" class="chip-checkbox hidden">
           <label for="psub-${idx}" class="inline-block px-3 py-1.5 bg-white border border-orange-300 rounded-xl font-black text-xs text-slate-900 cursor-pointer shadow-sm">${item}</label>
+        </div>
+      `).join('');
+    }
+
+    // 動態載入痛處改善方式（結合預設處置與使用者自訂藥物）
+    function renderDynamicPainReliefOptions() {
+      const container = document.getElementById('dynamic-pain-relief-container');
+      if(!container) return;
+
+      const defaultReliefs = ['貼痠痛藥布', '熱敷舒緩', '冰敷消腫', '臥床休息', '輕柔按摩'];
+      
+      // 從 localStorage 取得該長輩目前登記的藥物清單
+      const key = `health_data_${currentActiveUser}`;
+      const allData = JSON.parse(localStorage.getItem(key)) || [];
+      const userMeds = allData.filter(d => d.type === 'med').map(m => `服用：${m.name}`);
+
+      const combined = [...userMeds, ...defaultReliefs];
+
+      container.innerHTML = combined.map((item, idx) => `
+        <div>
+          <input type="checkbox" name="pain-relief" id="pr-${idx}" value="${item}" class="chip-checkbox hidden">
+          <label for="pr-${idx}" class="block text-center py-2 bg-white border border-emerald-300 rounded-xl font-black text-xs cursor-pointer shadow-sm">💊 ${item}</label>
         </div>
       `).join('');
     }
@@ -702,6 +729,19 @@
       const sides = Array.from(document.querySelectorAll('input[name="pain-side"]:checked')).map(e => e.value);
       const types = Array.from(document.querySelectorAll('input[name="pain-type"]:checked')).map(e => e.value);
       const reliefs = Array.from(document.querySelectorAll('input[name="pain-relief"]:checked')).map(e => e.value);
+      const linkBP = document.getElementById('pain-link-bp')?.checked;
+
+      let linkedBPData = null;
+      if (linkBP) {
+        const key = `health_data_${currentActiveUser}`;
+        const allData = JSON.parse(localStorage.getItem(key)) || [];
+        const latestBP = allData.find(d => d.type === 'bp');
+        if (latestBP) {
+          linkedBPData = `${latestBP.sys}/${latestBP.dia} mmHg (脈搏:${latestBP.pulse})`;
+        } else {
+          linkedBPData = "無近期血壓紀錄";
+        }
+      }
 
       saveDataToStorage({
         type: 'pain',
@@ -713,6 +753,7 @@
         freq: document.getElementById('pain-freq')?.value || '偶爾陣痛',
         level: document.getElementById('pain-level')?.value || '4',
         reliefs,
+        linkedBP: linkedBPData,
         note: document.getElementById('pain-note')?.value || ''
       });
       alert("✅ 疼痛紀錄已儲存成功！");
@@ -779,7 +820,97 @@
       renderPainUI(allData.filter(d => d.type === 'pain'));
       renderMedUI(allData.filter(d => d.type === 'med'));
       renderCalUI(allData.filter(d => d.type === 'cal'));
+      renderMiniCalendar(allData.filter(d => d.type === 'cal'));
+      renderDynamicPainReliefOptions();
     }
+
+    // 🗓️ 渲染小月曆與點擊事件
+    function renderMiniCalendar(records) {
+      const container = document.getElementById('mini-calendar-container');
+      if(!container) return;
+
+      const firstDay = new Date(calCurrentYear, calCurrentMonth, 1);
+      const lastDay = new Date(calCurrentYear, calCurrentMonth + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDayOfWeek = firstDay.getDay();
+
+      let html = `
+        <div class="flex justify-between items-center mb-3">
+          <button type="button" onclick="changeMonth(-1)" class="px-3 py-1 bg-purple-200 hover:bg-purple-300 text-purple-900 font-black rounded-lg text-xs">◀ 上個月</button>
+          <span class="font-black text-purple-950 text-base">${calCurrentYear} 年 ${calCurrentMonth + 1} 月</span>
+          <button type="button" onclick="changeMonth(1)" class="px-3 py-1 bg-purple-200 hover:bg-purple-300 text-purple-900 font-black rounded-lg text-xs">下個月 ▶</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-xs font-black text-purple-800 mb-1">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div class="grid grid-cols-7 gap-1">
+      `;
+
+      for(let i=0; i<startDayOfWeek; i++) {
+        html += `<div class="h-10 bg-slate-100/50 rounded-lg opacity-30"></div>`;
+      }
+
+      for(let day=1; day<=daysInMonth; day++) {
+        const mStr = String(calCurrentMonth + 1).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const dateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+
+        const dayEvents = records.filter(r => r.date === dateStr);
+        let dotsHtml = '';
+        if(dayEvents.length > 0) {
+          dotsHtml = `<div class="flex justify-center gap-0.5 mt-0.5 overflow-hidden">` +
+            dayEvents.slice(0, 3).map(e => {
+              let dotColor = 'bg-rose-500';
+              if(e.cat === 'home') dotColor = 'bg-emerald-500';
+              else if(e.cat === 'med') dotColor = 'bg-sky-500';
+              else if(e.cat === 'remind') dotColor = 'bg-amber-500';
+              else if(e.cat === 'exam') dotColor = 'bg-purple-500';
+              else if(e.cat === 'other') dotColor = 'bg-slate-500';
+              return `<span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>`;
+            }).join('') + `</div>`;
+        }
+
+        html += `
+          <div onclick="showDayEvents('${dateStr}')" class="h-12 bg-white border border-purple-200 rounded-xl p-1 flex flex-col justify-between cursor-pointer hover:bg-purple-100 transition-all shadow-sm">
+            <span class="text-xs font-black text-purple-950 text-right">${day}</span>
+            ${dotsHtml}
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    window.changeMonth = function(direction) {
+      calCurrentMonth += direction;
+      if(calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear++;
+      } else if(calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear--;
+      }
+      loadUserData();
+    };
+
+    window.showDayEvents = function(dateStr) {
+      const key = `health_data_${currentActiveUser}`;
+      const allData = JSON.parse(localStorage.getItem(key)) || [];
+      const dayEvents = allData.filter(d => d.type === 'cal' && d.date === dateStr);
+
+      if(dayEvents.length === 0) {
+        alert(`${dateStr} 沒有安排行程紀錄。`);
+        return;
+      }
+
+      let msg = `📅 ${dateStr} 的行程內容：\n\n`;
+      dayEvents.forEach((ev, idx) => {
+        const st = CAL_STYLES[ev.cat] || CAL_STYLES.other;
+        msg += `${idx+1}. [${st.label}] ${ev.time || ''} - ${ev.title}\n`;
+      });
+      alert(msg);
+    };
 
     function renderBPUI(records) {
       const list = document.getElementById('bp-history-list');
@@ -817,6 +948,7 @@
                 <div class="text-xs font-bold text-rose-800">
                   型態：${(r.types || []).join('、')} ｜ 頻率：${r.freq} ｜ 痛度：${r.level}分
                 </div>
+                ${r.linkedBP ? `<div class="text-xs font-black text-sky-900 bg-sky-100 px-2 py-0.5 rounded-lg border border-sky-300 inline-block mt-0.5">🔗 當時血壓：${r.linkedBP}</div>` : ''}
                 ${r.reliefs && r.reliefs.length ? `<div class="text-xs font-black text-emerald-900 bg-white px-2 py-1 rounded-lg border border-emerald-300 inline-block mt-1">改善處置：${r.reliefs.join('、')}</div>` : ''}
                 ${r.note ? `<div class="text-xs text-slate-700 font-bold">備註：${r.note}</div>` : ''}
               </div>
