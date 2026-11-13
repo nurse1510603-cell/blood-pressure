@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>長輩健康守護與行事曆 - 雲端同步完整版</title>
+  <title>長輩健康守護與行事曆 - 智慧時間提醒版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -93,13 +93,16 @@
 
   <main class="max-w-md mx-auto p-4 flex flex-col gap-5">
 
-    <!-- 📌 置頂用藥提醒看板 -->
+    <!-- 📌 智慧時間感應・置頂用藥提醒看板 -->
     <div id="pinned-med-banner" class="bg-gradient-to-r from-amber-100 via-yellow-50 to-orange-100 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md">
       <div class="flex justify-between items-center mb-2">
-        <span class="font-black text-amber-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-thumbtack text-rose-600 rotate-45"></i> 置頂用藥提醒看板
-        </span>
-        <button type="button" id="goto-med-btn" class="text-xs font-black bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg shadow-sm">
+        <div class="flex flex-col">
+          <span class="font-black text-amber-950 text-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-clock text-rose-600"></i> 
+            <span id="current-period-label">目前時段用藥提醒</span>
+          </span>
+        </div>
+        <button type="button" id="goto-med-btn" class="text-xs font-black bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">
           管理藥物 <i class="fa-solid fa-chevron-right ml-0.5"></i>
         </button>
       </div>
@@ -215,6 +218,18 @@
         <h2 class="text-xl font-black text-orange-700 border-b-2 border-orange-100 pb-2 mb-4">
           <i class="fa-solid fa-person-dots-from-line mr-2"></i>點選疼痛部位與狀況
         </h2>
+
+        <!-- 新增：疼痛發作日期與時間選擇 -->
+        <div class="bg-orange-50 p-3 rounded-2xl border border-orange-200 mb-4 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-black text-orange-950 mb-1">發作日期：</label>
+            <input type="date" id="pain-date-input" class="w-full bg-white border-2 border-orange-300 rounded-xl p-2 font-black text-sm text-slate-900">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-orange-950 mb-1">發作時間：</label>
+            <input type="time" id="pain-time-input" class="w-full bg-white border-2 border-orange-300 rounded-xl p-2 font-black text-sm text-slate-900">
+          </div>
+        </div>
 
         <div class="mb-4">
           <label class="block text-sm font-black text-slate-900 mb-2">1. 選擇大部位：</label>
@@ -334,7 +349,7 @@
         <div class="mb-4 flex items-center gap-2 bg-amber-50 p-3 rounded-xl border border-amber-300">
           <input type="checkbox" id="med-pin-check" checked class="w-5 h-5 accent-amber-600">
           <label for="med-pin-check" class="font-black text-sm text-amber-950 cursor-pointer">
-            📌 將此藥物置頂顯示在網頁最上方看板
+            📌 啟用智慧時間提醒（依手機目前時間自動置頂看板）
           </label>
         </div>
 
@@ -441,18 +456,56 @@
       initChart();
       loadUserData();
       bindAllEvents();
+      
+      // 每分鐘自動更新手機時間與置頂用藥時段提醒
+      setInterval(() => {
+        const key = `health_data_${currentActiveUser}`;
+        const allData = JSON.parse(localStorage.getItem(key)) || [];
+        const userRecords = allData.filter(d => d.user === currentActiveUser);
+        renderMedUI(userRecords.filter(d => d.type === 'med'));
+      }, 60000);
     });
 
     function initDefaultDateTime() {
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0];
+      // 修正台灣當地時區日期格式
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const timeStr = now.toTimeString().slice(0, 5);
+
       const d1 = document.getElementById('bp-date-input');
-      const d2 = document.getElementById('cal-date');
       const t1 = document.getElementById('bp-time-input');
+      const pd = document.getElementById('pain-date-input');
+      const pt = document.getElementById('pain-time-input');
+      const d2 = document.getElementById('cal-date');
+
       if(d1) d1.value = dateStr;
-      if(d2) d2.value = dateStr;
       if(t1) t1.value = timeStr;
+      if(pd) pd.value = dateStr;
+      if(pt) pt.value = timeStr;
+      if(d2) d2.value = dateStr;
+    }
+
+    // 🕒 根據手機當前時間判斷用藥時段
+    function getCurrentMedPeriod() {
+      const now = new Date();
+      const hour = now.getHours();
+      const min = now.getMinutes();
+      const totalMins = hour * 60 + min;
+
+      if (totalMins >= 300 && totalMins <= 630) {
+        return { label: '🌅 早上時段 (05:00~10:30)', keywords: ['早餐前', '早餐後'] };
+      } else if (totalMins > 630 && totalMins <= 870) {
+        return { label: '☀️ 中午時段 (10:31~14:30)', keywords: ['午餐前', '午餐後'] };
+      } else if (totalMins >= 990 && totalMins <= 1230) {
+        return { label: '🌆 晚餐時段 (16:30~20:30)', keywords: ['晚餐前', '晚餐後'] };
+      } else if (totalMins > 1230 || totalMins < 300) {
+        return { label: '🛏️ 睡前/夜間時段 (20:31~04:59)', keywords: ['睡前'] };
+      } else {
+        return { label: '🌤️ 下午時段 (14:31~16:29)', keywords: ['需要時服用'] };
+      }
     }
 
     function initUserSelect() {
@@ -526,6 +579,9 @@
       const targetBtn = document.getElementById(`tab-${tab}-btn`);
       if(targetSec) { targetSec.classList.remove('hidden'); targetSec.classList.add('flex'); }
       if(targetBtn) targetBtn.classList.add('active');
+      
+      // 切換到疼痛頁籤時自動更新當下時間方便紀錄
+      if(tab === 'pain') initDefaultDateTime();
     }
 
     function setTimeSlot(slot) {
@@ -681,6 +737,8 @@
     }
 
     function savePainRecord() {
+      const pDate = document.getElementById('pain-date-input')?.value || '';
+      const pTime = document.getElementById('pain-time-input')?.value || '';
       const majorEl = document.querySelector('input[name="pain-major"]:checked');
       const subs = Array.from(document.querySelectorAll('input[name="pain-sub"]:checked')).map(e => e.value);
       const sides = Array.from(document.querySelectorAll('input[name="pain-side"]:checked')).map(e => e.value);
@@ -700,7 +758,7 @@
 
       saveDataToStorage({
         type: 'pain',
-        time: new Date().toLocaleString('zh-TW', { hour12: false }),
+        time: `${pDate} ${pTime}`.trim() || new Date().toLocaleString('zh-TW', { hour12: false }),
         major: majorEl ? majorEl.value : '頭部',
         subs: subs.length ? subs : ['未指定'],
         sides: sides.length ? sides : ['未指定'],
@@ -886,23 +944,56 @@
         </div>`).join('');
     }
 
+    // 💊 智慧時間排序與置頂渲染
     function renderMedUI(records) {
+      const period = getCurrentMedPeriod();
+      const periodLabelEl = document.getElementById('current-period-label');
+      if (periodLabelEl) {
+        const nowStr = new Date().toTimeString().slice(0, 5);
+        periodLabelEl.innerText = `${period.label} (${nowStr})`;
+      }
+
       const pinned = records.filter(r => r.pinned);
       const pinBox = document.getElementById('pinned-med-list');
+      
       if(pinBox) {
-        pinBox.innerHTML = pinned.length === 0 ? '<div class="text-xs font-bold text-amber-900 py-1">尚無置頂藥物</div>' : pinned.map(r => `
-          <div class="flex-shrink-0 bg-white border-2 border-amber-300 rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[200px]">
-            ${r.photo ? `<img src="${r.photo}" class="w-12 h-12 rounded-lg object-cover border">` : `<div class="w-12 h-12 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center text-xl"><i class="fa-solid fa-pills"></i></div>`}
-            <div><div class="font-black text-sm text-slate-900">${r.name}</div><div class="text-[11px] font-black text-orange-700 mt-0.5">${(r.medTimes||[]).join('・')}</div></div>
-          </div>`).join('');
+        if (pinned.length === 0) {
+          pinBox.innerHTML = '<div class="text-xs font-bold text-amber-900 py-1">尚無置頂藥物，請至「用藥」頁籤新增。</div>';
+        } else {
+          // 判斷哪些藥物符合「手機目前時段」，並將其排在最前面
+          const sortedPinned = [...pinned].sort((a, b) => {
+            const aMatch = (a.medTimes || []).some(t => period.keywords.includes(t));
+            const bMatch = (b.medTimes || []).some(t => period.keywords.includes(t));
+            if (aMatch && !bMatch) return -1;
+            if (!aMatch && bMatch) return 1;
+            return 0;
+          });
+
+          pinBox.innerHTML = sortedPinned.map(r => {
+            const isDueNow = (r.medTimes || []).some(t => period.keywords.includes(t));
+            return `
+              <div class="flex-shrink-0 ${isDueNow ? 'bg-rose-50 border-2 border-rose-500 ring-2 ring-rose-300' : 'bg-white border-2 border-amber-300 opacity-85'} rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[215px] relative">
+                ${isDueNow ? `<span class="absolute -top-2.5 right-2 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow animate-bounce">⏰ 現在該吃</span>` : ''}
+                ${r.photo ? `<img src="${r.photo}" class="w-12 h-12 rounded-lg object-cover border">` : `<div class="w-12 h-12 rounded-lg ${isDueNow ? 'bg-rose-100 text-rose-600' : 'bg-sky-100 text-sky-700'} flex items-center justify-center text-xl"><i class="fa-solid fa-pills"></i></div>`}
+                <div>
+                  <div class="font-black text-sm text-slate-900">${r.name}</div>
+                  <div class="text-[11px] font-black ${isDueNow ? 'text-rose-700' : 'text-orange-700'} mt-0.5">${(r.medTimes||[]).join('・')}</div>
+                </div>
+              </div>`;
+          }).join('');
+        }
       }
+
       const list = document.getElementById('med-history-list');
       if(!list) return;
       list.innerHTML = records.length === 0 ? '<div class="text-slate-400 font-bold text-center py-4">尚無用藥紀錄</div>' : records.map(r => `
         <div class="p-3 bg-sky-50 rounded-2xl border-2 border-sky-300 flex items-center justify-between gap-3 shadow-sm">
           <div class="flex items-center gap-3">
             ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-xl object-cover border-2 border-white shadow">` : `<div class="w-16 h-16 rounded-xl bg-white text-sky-600 flex items-center justify-center text-2xl shadow"><i class="fa-solid fa-capsules"></i></div>`}
-            <div><div class="font-black text-base text-slate-900">${r.name}</div><div class="flex flex-wrap gap-1 mt-1">${(r.medTimes||[]).map(t => `<span class="text-xs font-black bg-sky-600 text-white px-2 py-0.5 rounded-lg">${t}</span>`).join('')}</div></div>
+            <div>
+              <div class="font-black text-base text-slate-900">${r.name}</div>
+              <div class="flex flex-wrap gap-1 mt-1">${(r.medTimes||[]).map(t => `<span class="text-xs font-black bg-sky-600 text-white px-2 py-0.5 rounded-lg">${t}</span>`).join('')}</div>
+            </div>
           </div>
           <button type="button" onclick="deleteRecord('${r.id}')" class="text-rose-700 font-black text-xs bg-white px-2.5 py-1.5 rounded-xl border border-rose-300 shadow-sm">刪除</button>
         </div>`).join('');
